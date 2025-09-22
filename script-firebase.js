@@ -882,7 +882,6 @@ async function initSinkolorCreations() {
     // Gestion du bouton d'ajout
     if (addCreationBtn) {
         addCreationBtn.addEventListener('click', () => {
-            if (!requestSinkolorAuth()) return;
             showAddSinkolorCreationModal();
         });
     }

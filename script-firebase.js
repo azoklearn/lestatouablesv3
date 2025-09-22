@@ -1083,8 +1083,20 @@ function showAddSinkolorCreationModal() {
             };
             
             if (imageFile) {
-                // Upload de l'image vers Firebase Storage
-                await firebaseService.addSinkolorCreationWithImage(creation, imageFile);
+                try {
+                    // Upload de l'image vers Firebase Storage
+                    await firebaseService.addSinkolorCreationWithImage(creation, imageFile);
+                } catch (error) {
+                    console.error('Erreur Firebase Storage, fallback vers base64:', error);
+                    // Fallback : convertir l'image en base64
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        creation.imageData = e.target.result;
+                        await firebaseService.addSinkolorCreation(creation);
+                    };
+                    reader.readAsDataURL(imageFile);
+                    return; // Sortir de la fonction pour éviter le double ajout
+                }
             } else if (imageUrl) {
                 // Utiliser l'URL fournie
                 creation.imageData = imageUrl;

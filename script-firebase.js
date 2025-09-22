@@ -790,41 +790,8 @@ async function renderSinkolorCreations(creations) {
     console.log('🎨 Rendu terminé,', grid.children.length, 'éléments dans la grille');
 }
 
-// Système d'authentification pour Sinkolor
-const SINKOLOR_ADMIN_PASSWORD = '03KinepolisdDiva23!';
-let sinkolorAuthorized = false;
-
-function hasSinkolorSessionAuth() {
-    try { 
-        return sessionStorage.getItem('sinkolorAuth') === '1'; 
-    } catch(e) { 
-        return false; 
-    }
-}
-
-function setSinkolorSessionAuth(on) {
-    try {
-        if (on) sessionStorage.setItem('sinkolorAuth', '1');
-        else sessionStorage.removeItem('sinkolorAuth');
-    } catch(e) { 
-        console.warn('SessionStorage non disponible'); 
-    }
-}
-
-function requestSinkolorAuth() {
-    if (sinkolorAuthorized || hasSinkolorSessionAuth()) { 
-        sinkolorAuthorized = true; 
-        return true; 
-    }
-    const pwd = prompt('Entrez le mot de passe pour éditer les créations :');
-    if (pwd === SINKOLOR_ADMIN_PASSWORD) {
-        sinkolorAuthorized = true;
-        setSinkolorSessionAuth(true);
-        return true;
-    }
-    alert('Mot de passe incorrect');
-    return false;
-}
+// Système d'authentification pour Sinkolor - SUPPRIMÉ
+// Plus de mot de passe requis pour gérer les créations
 
 async function initSinkolorCreations() {
     console.log('🎨 Début initSinkolorCreations...');
@@ -862,9 +829,6 @@ async function initSinkolorCreations() {
         let editMode = false;
         
         toggleEditBtn.addEventListener('click', () => {
-            if (!editMode) {
-                if (!requestSinkolorAuth()) return;
-            }
             editMode = !editMode;
             toggleEditBtn.innerHTML = editMode ? 
                 '<i class="fas fa-times" style="margin-right: 8px;"></i>Terminer' : 

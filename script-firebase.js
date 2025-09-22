@@ -447,28 +447,43 @@ function initLocalStorageFallback() {
 }
 
 async function readFlashItems() {
-    if (firebaseService) {
-        try {
-            return await firebaseService.getFlashItems();
-        } catch (error) {
-            console.error('Erreur Firebase, fallback vers localStorage:', error);
-            return readFlashItemsLocalStorage();
+    const defaultFlashItems = [
+        { 
+            title: "Flash Manga #1", 
+            tags: ['manga','couleur'], 
+            imageData: 'https://placehold.co/800x800?text=Flash+Manga+1' 
+        },
+        { 
+            title: "Flash Anime #2", 
+            tags: ['anime','line'], 
+            imageData: 'https://placehold.co/800x800?text=Flash+Anime+2' 
+        },
+        { 
+            title: "Pop Culture #3", 
+            tags: ['pop','culture'], 
+            imageData: 'https://placehold.co/800x800?text=Pop+Culture+3' 
         }
-    }
-    return readFlashItemsLocalStorage();
-}
-
-function readFlashItemsLocalStorage() {
+    ];
+    
     try {
-        const raw = localStorage.getItem('flashItems');
-        if (!raw) { return []; }
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-    } catch (e) {
-        console.error('Erreur de lecture flashItems localStorage', e);
+        const firebaseFlashItems = await firebaseService.getFlashItems();
+        if (firebaseFlashItems.length > 0) {
+            return firebaseFlashItems;
+        } else {
+            // Si pas de flash dans Firebase, ajouter les flash par défaut
+            for (const item of defaultFlashItems) {
+                await firebaseService.addFlashItem(item);
+            }
+            return defaultFlashItems;
+        }
+    } catch (error) {
+        console.error('Erreur Firebase:', error);
+        // Pas de fallback localStorage - uniquement Firebase
         return [];
     }
 }
+
+// Fonction localStorage supprimée - uniquement Firebase
 
 async function renderFlashList(items) {
     const grid = document.getElementById('flash-grid');
@@ -484,8 +499,15 @@ async function renderFlashList(items) {
     }
     items.forEach(item => {
         const node = tpl.content.cloneNode(true);
+        const flashItem = node.querySelector('.flash-item');
         const img = node.querySelector('.flash-img');
         const cap = node.querySelector('.flash-caption');
+        
+        // Ajouter l'ID de flash à l'élément
+        if (item.id) {
+            flashItem.setAttribute('data-flash-id', item.id);
+        }
+        
         img.src = item.imageData || 'https://placehold.co/600x600?text=Flash';
         img.alt = item.title || 'Tatouage flash';
         cap.textContent = item.title || '';
@@ -493,40 +515,53 @@ async function renderFlashList(items) {
     });
 }
 
+// Système d'authentification pour Flash
+const FLASH_ADMIN_PASSWORD = '03KinepolisdDiva23!';
+let flashAuthorized = false;
+
+function hasFlashSessionAuth() {
+    try { 
+        return sessionStorage.getItem('flashAuth') === '1'; 
+    } catch(e) { 
+        return false; 
+    }
+}
+
+function setFlashSessionAuth(on) {
+    try {
+        if (on) sessionStorage.setItem('flashAuth', '1');
+        else sessionStorage.removeItem('flashAuth');
+    } catch(e) { 
+        console.warn('SessionStorage non disponible'); 
+    }
+}
+
+function requestFlashAuth() {
+    if (flashAuthorized || hasFlashSessionAuth()) { 
+        flashAuthorized = true; 
+        return true; 
+    }
+    const pwd = prompt('Entrez le mot de passe pour éditer les flashs :');
+    if (pwd === FLASH_ADMIN_PASSWORD) {
+        flashAuthorized = true;
+        setFlashSessionAuth(true);
+        return true;
+    }
+    alert('Mot de passe incorrect');
+    return false;
+}
+
 async function initFlash() {
     const search = document.getElementById('flash-search');
     const clear = document.getElementById('flash-clear');
+    const toggleEditBtn = document.getElementById('toggleEditFlash');
+    const addFlashBtn = document.getElementById('addFlash');
     
     // Initialiser Firebase
     await initFirebase();
     
-    // Seed initial si vide (une seule fois)
+    // Charger les flashs (avec seed automatique si nécessaire)
     let items = await readFlashItems();
-    try {
-        const seeded = localStorage.getItem('flashSeeded');
-        if ((!items || items.length === 0) && !seeded) {
-            const defaultItems = [
-                { title: "Flash Manga #1", tags: ['manga','couleur'], imageData: 'https://placehold.co/800x800?text=Flash+Manga+1' },
-                { title: "Flash Anime #2", tags: ['anime','line'], imageData: 'https://placehold.co/800x800?text=Flash+Anime+2' },
-                { title: "Pop Culture #3", tags: ['pop','culture'], imageData: 'https://placehold.co/800x800?text=Pop+Culture+3' }
-            ];
-            
-            if (firebaseService) {
-                // Ajouter à Firebase
-                for (const item of defaultItems) {
-                    await firebaseService.addFlashItem(item);
-                }
-            } else {
-                // Fallback localStorage
-                localStorage.setItem('flashItems', JSON.stringify(defaultItems));
-            }
-            localStorage.setItem('flashSeeded', '1');
-            items = await readFlashItems();
-        }
-    } catch (e) { 
-        console.warn('Seed flash ignoré:', e); 
-    }
-    
     await renderFlashList(items);
 
     function applyFilter() {
@@ -542,6 +577,70 @@ async function initFlash() {
     search?.addEventListener('input', applyFilter);
     clear?.addEventListener('click', () => { if(search){ search.value=''; } applyFilter(); });
     
+    // Gestion des boutons d'administration
+    if (toggleEditBtn) {
+        let editMode = false;
+        
+        toggleEditBtn.addEventListener('click', () => {
+            if (!editMode) {
+                if (!requestFlashAuth()) return;
+            }
+            editMode = !editMode;
+            toggleEditBtn.textContent = editMode ? 'Terminer' : 'Gérer';
+            
+            // Afficher/masquer le bouton d'ajout
+            if (addFlashBtn) {
+                addFlashBtn.style.display = editMode ? 'block' : 'none';
+            }
+            
+            // Ajouter/supprimer les boutons d'édition sur chaque flash
+            const flashItems = document.querySelectorAll('#flashGrid .flash-item');
+            flashItems.forEach(item => {
+                let editControls = item.querySelector('.edit-controls');
+                if (editMode && !editControls) {
+                    editControls = document.createElement('div');
+                    editControls.className = 'edit-controls';
+                    editControls.style.cssText = 'position: absolute; top: 5px; right: 5px; display: flex; gap: 5px; z-index: 10;';
+                    
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-secondary';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    editBtn.style.cssText = 'padding: 3px 6px; font-size: 0.7rem;';
+                    editBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const flashId = item.getAttribute('data-flash-id');
+                        if (flashId) editFlash(flashId);
+                    });
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-secondary';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.style.cssText = 'padding: 3px 6px; font-size: 0.7rem; background: #e74c3c;';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const flashId = item.getAttribute('data-flash-id');
+                        if (flashId) deleteFlash(flashId);
+                    });
+                    
+                    editControls.appendChild(editBtn);
+                    editControls.appendChild(deleteBtn);
+                    item.style.position = 'relative';
+                    item.appendChild(editControls);
+                } else if (!editMode && editControls) {
+                    editControls.remove();
+                }
+            });
+        });
+    }
+    
+    // Gestion du bouton d'ajout
+    if (addFlashBtn) {
+        addFlashBtn.addEventListener('click', () => {
+            if (!requestFlashAuth()) return;
+            showAddFlashModal();
+        });
+    }
+    
     // Écouter les changements en temps réel si Firebase est disponible
     if (firebaseService) {
         firebaseService.onFlashItemsChange((snapshot) => {
@@ -556,28 +655,46 @@ async function initFlash() {
 // Sinkolor Creations (Firebase) — lecture + affichage
 // ============================
 async function readSinkolorCreations() {
-    if (firebaseService) {
-        try {
-            return await firebaseService.getSinkolorCreations();
-        } catch (error) {
-            console.error('Erreur Firebase, fallback vers localStorage:', error);
-            return readSinkolorCreationsLocalStorage();
+    const defaultCreations = [
+        { 
+            title: "Tatouage Manga #1", 
+            description: "Création inspirée de l'univers manga",
+            category: "manga",
+            imageData: 'https://placehold.co/600x600?text=Manga+1' 
+        },
+        { 
+            title: "Tatouage Disney #2", 
+            description: "Personnage Disney stylisé",
+            category: "disney",
+            imageData: 'https://placehold.co/600x600?text=Disney+2' 
+        },
+        { 
+            title: "Pop Culture #3", 
+            description: "Référence culturelle moderne",
+            category: "pop",
+            imageData: 'https://placehold.co/600x600?text=Pop+Culture+3' 
         }
-    }
-    return readSinkolorCreationsLocalStorage();
-}
-
-function readSinkolorCreationsLocalStorage() {
+    ];
+    
     try {
-        const raw = localStorage.getItem('sinkolorCreations');
-        if (!raw) { return []; }
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-    } catch (e) {
-        console.error('Erreur de lecture sinkolorCreations localStorage', e);
+        const firebaseCreations = await firebaseService.getSinkolorCreations();
+        if (firebaseCreations.length > 0) {
+            return firebaseCreations;
+        } else {
+            // Si pas de créations dans Firebase, ajouter les créations par défaut
+            for (const creation of defaultCreations) {
+                await firebaseService.addSinkolorCreation(creation);
+            }
+            return defaultCreations;
+        }
+    } catch (error) {
+        console.error('Erreur Firebase:', error);
+        // Pas de fallback localStorage - uniquement Firebase
         return [];
     }
 }
+
+// Fonction localStorage supprimée - uniquement Firebase
 
 async function renderSinkolorCreations(creations) {
     const grid = document.getElementById('portfolioGrid');
@@ -643,54 +760,48 @@ async function renderSinkolorCreations(creations) {
     });
 }
 
+// Système d'authentification pour Sinkolor
+const SINKOLOR_ADMIN_PASSWORD = '03KinepolisdDiva23!';
+let sinkolorAuthorized = false;
+
+function hasSinkolorSessionAuth() {
+    try { 
+        return sessionStorage.getItem('sinkolorAuth') === '1'; 
+    } catch(e) { 
+        return false; 
+    }
+}
+
+function setSinkolorSessionAuth(on) {
+    try {
+        if (on) sessionStorage.setItem('sinkolorAuth', '1');
+        else sessionStorage.removeItem('sinkolorAuth');
+    } catch(e) { 
+        console.warn('SessionStorage non disponible'); 
+    }
+}
+
+function requestSinkolorAuth() {
+    if (sinkolorAuthorized || hasSinkolorSessionAuth()) { 
+        sinkolorAuthorized = true; 
+        return true; 
+    }
+    const pwd = prompt('Entrez le mot de passe pour éditer les créations :');
+    if (pwd === SINKOLOR_ADMIN_PASSWORD) {
+        sinkolorAuthorized = true;
+        setSinkolorSessionAuth(true);
+        return true;
+    }
+    alert('Mot de passe incorrect');
+    return false;
+}
+
 async function initSinkolorCreations() {
     // Initialiser Firebase
     await initFirebase();
     
-    // Charger les créations
-    let creations = await readSinkolorCreations();
-    
-    // Seed initial si vide (une seule fois)
-    try {
-        const seeded = localStorage.getItem('sinkolorSeeded');
-        if ((!creations || creations.length === 0) && !seeded) {
-            const defaultCreations = [
-                { 
-                    title: "Tatouage Manga #1", 
-                    description: "Création inspirée de l'univers manga",
-                    category: "manga",
-                    imageData: 'https://placehold.co/600x600?text=Manga+1' 
-                },
-                { 
-                    title: "Tatouage Disney #2", 
-                    description: "Personnage Disney stylisé",
-                    category: "disney",
-                    imageData: 'https://placehold.co/600x600?text=Disney+2' 
-                },
-                { 
-                    title: "Pop Culture #3", 
-                    description: "Référence culturelle moderne",
-                    category: "pop",
-                    imageData: 'https://placehold.co/600x600?text=Pop+Culture+3' 
-                }
-            ];
-            
-            if (firebaseService) {
-                // Ajouter à Firebase
-                for (const creation of defaultCreations) {
-                    await firebaseService.addSinkolorCreation(creation);
-                }
-            } else {
-                // Fallback localStorage
-                localStorage.setItem('sinkolorCreations', JSON.stringify(defaultCreations));
-            }
-            localStorage.setItem('sinkolorSeeded', '1');
-            creations = await readSinkolorCreations();
-        }
-    } catch (e) { 
-        console.warn('Seed Sinkolor ignoré:', e); 
-    }
-    
+    // Charger les créations (avec seed automatique si nécessaire)
+    const creations = await readSinkolorCreations();
     await renderSinkolorCreations(creations);
     
     // Écouter les changements en temps réel si Firebase est disponible
@@ -705,15 +816,22 @@ async function initSinkolorCreations() {
     const toggleEditBtn = document.getElementById('toggleEditPortfolio');
     const addCreationBtn = document.getElementById('addCreation');
     
-    if (toggleEditBtn && addCreationBtn) {
+    if (toggleEditBtn) {
         let editMode = false;
         
         toggleEditBtn.addEventListener('click', () => {
+            if (!editMode) {
+                if (!requestSinkolorAuth()) return;
+            }
             editMode = !editMode;
-            addCreationBtn.style.display = editMode ? 'block' : 'none';
             toggleEditBtn.innerHTML = editMode ? 
                 '<i class="fas fa-times" style="margin-right: 8px;"></i>Terminer' : 
                 '<i class="fas fa-edit" style="margin-right: 8px;"></i>Gérer les créations';
+            
+            // Afficher/masquer le bouton d'ajout
+            if (addCreationBtn) {
+                addCreationBtn.style.display = editMode ? 'block' : 'none';
+            }
             
             // Ajouter/supprimer les boutons d'édition sur chaque création
             const portfolioItems = document.querySelectorAll('#portfolioGrid .portfolio-item');
@@ -753,15 +871,19 @@ async function initSinkolorCreations() {
                 }
             });
         });
-        
+    }
+    
+    // Gestion du bouton d'ajout
+    if (addCreationBtn) {
         addCreationBtn.addEventListener('click', () => {
-            showAddCreationModal();
+            if (!requestSinkolorAuth()) return;
+            showAddSinkolorCreationModal();
         });
     }
 }
 
-// Fonction pour afficher le modal d'ajout de création
-function showAddCreationModal() {
+// Fonction pour afficher le modal d'ajout de création Sinkolor
+function showAddSinkolorCreationModal() {
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -925,6 +1047,11 @@ function showAddCreationModal() {
             return;
         }
         
+        if (!description) {
+            alert('Veuillez entrer une description');
+            return;
+        }
+        
         // Validation de l'image
         if (imageFile) {
             if (imageFile.size > 10 * 1024 * 1024) { // 10MB
@@ -950,26 +1077,17 @@ function showAddCreationModal() {
                 category
             };
             
-            if (firebaseService) {
-                if (imageFile) {
-                    // Upload de l'image vers Firebase Storage
-                    await firebaseService.addSinkolorCreationWithImage(creation, imageFile);
-                } else if (imageUrl) {
-                    // Utiliser l'URL fournie
-                    creation.imageData = imageUrl;
-                    await firebaseService.addSinkolorCreation(creation);
-                } else {
-                    // Image par défaut
-                    creation.imageData = 'https://placehold.co/600x600?text=Création+Sinkolor';
-                    await firebaseService.addSinkolorCreation(creation);
-                }
+            if (imageFile) {
+                // Upload de l'image vers Firebase Storage
+                await firebaseService.addSinkolorCreationWithImage(creation, imageFile);
+            } else if (imageUrl) {
+                // Utiliser l'URL fournie
+                creation.imageData = imageUrl;
+                await firebaseService.addSinkolorCreation(creation);
             } else {
-                // Fallback localStorage
-                creation.imageData = imageUrl || 'https://placehold.co/600x600?text=Création+Sinkolor';
-                const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
-                existing.push(creation);
-                localStorage.setItem('sinkolorCreations', JSON.stringify(existing));
-                renderSinkolorCreations(existing);
+                // Image par défaut
+                creation.imageData = 'https://placehold.co/600x600?text=Création+Sinkolor';
+                await firebaseService.addSinkolorCreation(creation);
             }
             
             document.body.removeChild(modal);
@@ -987,6 +1105,14 @@ function showAddCreationModal() {
     document.getElementById('cancelCreationBtn').addEventListener('click', () => {
         document.body.removeChild(modal);
     });
+    
+    // Fermer avec Escape
+    document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+            document.body.removeChild(modal);
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    });
 }
 
 // Fonction pour éditer une création
@@ -1000,16 +1126,235 @@ async function deleteCreation(creationId) {
     if (!confirm('Supprimer cette création ? L\'image sera également supprimée.')) return;
     
     try {
-        if (firebaseService) {
-            await firebaseService.deleteSinkolorCreationWithImage(creationId);
-        } else {
-            // Fallback localStorage
-            const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
-            const filtered = existing.filter(c => c.id !== creationId);
-            localStorage.setItem('sinkolorCreations', JSON.stringify(filtered));
-            renderSinkolorCreations(filtered);
-        }
+        await firebaseService.deleteSinkolorCreationWithImage(creationId);
         showNotification('Création supprimée avec succès !', 'success');
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression: ' + error.message);
+    }
+}
+
+// Fonction pour afficher le modal d'ajout de flash
+function showAddFlashModal() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        ">
+            <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">Ajouter un flash</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Titre :</label>
+                <input type="text" id="flashTitle" placeholder="Titre du flash" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Tags (séparés par des virgules) :</label>
+                <input type="text" id="flashTags" placeholder="manga, couleur, anime" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Image du flash :</label>
+                <input type="file" id="flashImageFile" accept="image/*" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    background: white;
+                ">
+                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
+                    Formats acceptés : JPG, PNG, GIF, WebP (max 10MB)
+                </small>
+                <div id="flashImagePreview" style="
+                    margin-top: 1rem;
+                    text-align: center;
+                    display: none;
+                ">
+                    <img id="flashPreviewImg" style="
+                        max-width: 200px;
+                        max-height: 200px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    ">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Ou URL de l'image :</label>
+                <input type="url" id="flashImageUrl" placeholder="https://exemple.com/image.jpg" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
+                    Alternative : utilisez une URL d'image existante
+                </small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancelFlashBtn" style="
+                    padding: 0.8rem 1.5rem;
+                    border: 2px solid #ddd;
+                    background: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Annuler</button>
+                <button id="saveFlashBtn" style="
+                    padding: 0.8rem 1.5rem;
+                    background: linear-gradient(135deg, #27ae60, #2ecc71);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Ajouter</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Aperçu de l'image
+    const imageFileInput = document.getElementById('flashImageFile');
+    const imagePreview = document.getElementById('flashImagePreview');
+    const previewImg = document.getElementById('flashPreviewImg');
+    
+    imageFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+    
+    // Gestionnaires d'événements
+    document.getElementById('saveFlashBtn').addEventListener('click', async () => {
+        const title = document.getElementById('flashTitle').value.trim();
+        const tagsInput = document.getElementById('flashTags').value.trim();
+        const imageFile = document.getElementById('flashImageFile').files[0];
+        const imageUrl = document.getElementById('flashImageUrl').value.trim();
+        
+        if (!title) {
+            alert('Veuillez entrer un titre');
+            return;
+        }
+        
+        // Validation de l'image
+        if (imageFile) {
+            if (imageFile.size > 10 * 1024 * 1024) { // 10MB
+                alert('L\'image est trop volumineuse (max 10MB)');
+                return;
+            }
+            if (!imageFile.type.startsWith('image/')) {
+                alert('Veuillez sélectionner un fichier image valide');
+                return;
+            }
+        }
+        
+        // Désactiver le bouton pendant l'upload
+        const saveBtn = document.getElementById('saveFlashBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Upload en cours...';
+        saveBtn.disabled = true;
+        
+        try {
+            const flashItem = {
+                title,
+                tags: tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : []
+            };
+            
+            if (imageFile) {
+                // Upload de l'image vers Firebase Storage
+                await firebaseService.addFlashItemWithImage(flashItem, imageFile);
+            } else if (imageUrl) {
+                // Utiliser l'URL fournie
+                flashItem.imageData = imageUrl;
+                await firebaseService.addFlashItem(flashItem);
+            } else {
+                // Image par défaut
+                flashItem.imageData = 'https://placehold.co/800x800?text=Flash';
+                await firebaseService.addFlashItem(flashItem);
+            }
+            
+            document.body.removeChild(modal);
+            showNotification('Flash ajouté avec succès !', 'success');
+        } catch (error) {
+            console.error('Erreur lors de l\'ajout:', error);
+            alert('Erreur lors de l\'ajout du flash: ' + error.message);
+        } finally {
+            // Réactiver le bouton
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    });
+    
+    document.getElementById('cancelFlashBtn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Fermer avec Escape
+    document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+            document.body.removeChild(modal);
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    });
+}
+
+// Fonction pour éditer un flash
+async function editFlash(flashId) {
+    console.log('Édition du flash:', flashId);
+    // Implémentation de l'édition (similaire à l'ajout)
+}
+
+// Fonction pour supprimer un flash
+async function deleteFlash(flashId) {
+    if (!confirm('Supprimer ce flash ? L\'image sera également supprimée.')) return;
+    
+    try {
+        await firebaseService.deleteFlashItemWithImage(flashId);
+        showNotification('Flash supprimé avec succès !', 'success');
     } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         alert('Erreur lors de la suppression: ' + error.message);

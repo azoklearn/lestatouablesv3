@@ -262,6 +262,67 @@ export const firebaseService = {
             }
         },
 
+        // Fonction pour ajouter un flash avec upload d'image
+        async addFlashItemWithImage(flashItem, imageFile) {
+            try {
+                let imageData = null;
+                let imagePath = null;
+                
+                // Uploader l'image si fournie
+                if (imageFile) {
+                    const uploadResult = await this.uploadImage(imageFile, 'flash-items');
+                    imageData = uploadResult.url;
+                    imagePath = uploadResult.path;
+                }
+                
+                // Ajouter le flash avec l'URL de l'image
+                const flashData = {
+                    ...flashItem,
+                    imageData: imageData || flashItem.imageData,
+                    imagePath: imagePath,
+                    createdAt: new Date().toISOString()
+                };
+                
+                const docRef = await addDoc(collection(db, 'flashItems'), flashData);
+                return docRef.id;
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout du flash avec image:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour supprimer un flash avec suppression de l'image
+        async deleteFlashItemWithImage(flashId) {
+            try {
+                // Récupérer le flash pour obtenir le chemin de l'image
+                const flashItem = await this.getFlashItem(flashId);
+                
+                // Supprimer l'image si elle existe
+                if (flashItem && flashItem.imagePath) {
+                    await this.deleteImage(flashItem.imagePath);
+                }
+                
+                // Supprimer le flash de la base de données
+                await this.deleteFlashItem(flashId);
+            } catch (error) {
+                console.error('Erreur lors de la suppression du flash avec image:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour récupérer un flash spécifique
+        async getFlashItem(flashId) {
+            try {
+                const docRef = doc(db, 'flashItems', flashId);
+                const docSnap = await getDocs(collection(db, 'flashItems'));
+                const flashItem = docSnap.docs.find(doc => doc.id === flashId);
+                return flashItem ? { id: flashItem.id, ...flashItem.data() } : null;
+            } catch (error) {
+                console.error('Erreur lors de la récupération du flash:', error);
+                return null;
+            }
+        },
+
         // Fonction pour supprimer une création Sinkolor avec suppression de l'image
         async deleteSinkolorCreationWithImage(creationId) {
             try {

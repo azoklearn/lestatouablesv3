@@ -510,53 +510,8 @@
         }
     });
     </script>
-    <script>
-    (function(){
-        // Mot de passe (côté client). Pour plus de sécurité, préférer un backend.
-        const ADMIN_PASSWORD = '03KinepolisdDiva23!';
-        const STORAGE_KEY = 'flashData.v1';
-        const grid = document.getElementById('flashGrid');
-        const emptyEl = document.getElementById('flashEmpty');
-        const searchInput = document.getElementById('flashSearch');
-        const toggleBtn = document.getElementById('toggleEditFlash');
-        const addBtn = document.getElementById('addFlash');
-        
-        // Modal elements
-        const modal = document.getElementById('flashModal');
-        const modalDialog = modal.querySelector('.modal-dialog');
-        const modalClose = document.getElementById('flashModalClose');
-        const modalDone = document.getElementById('flashModalDone');
-        const modalBrowse = document.getElementById('flashModalBrowse');
-        const modalDropzone = document.getElementById('flashModalDropzone');
-        const fileInput = document.getElementById('flashFileInput');
+    <!-- Script localStorage supprimé - utilisation de script-firebase.js -->
 
-        let editMode = false;
-        let isAuthorized = false;
-        let allFlashData = [];
-        let filteredData = [];
-
-        function hasSessionAuth(){
-            try { return sessionStorage.getItem('flashAuth') === '1'; } catch(e) { return false; }
-        }
-
-        function setSessionAuth(on){
-            try {
-                if (on) sessionStorage.setItem('flashAuth','1');
-                else sessionStorage.removeItem('flashAuth');
-            } catch(e) {}
-        }
-
-        function requestAuth(){
-            if (isAuthorized || hasSessionAuth()) { isAuthorized = true; return true; }
-            const pwd = prompt('Entrez le mot de passe pour éditer les flashs :');
-            if (pwd === ADMIN_PASSWORD){
-                isAuthorized = true;
-                setSessionAuth(true);
-                return true;
-            }
-            alert('Mot de passe incorrect');
-            return false;
-        }
 
         function loadData(){
             const seed = [

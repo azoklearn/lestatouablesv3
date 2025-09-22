@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDermo - Les Tatouables</title>
+    <meta name="description" content="LDermo - Spécialiste en tatouage réparateur et dermopigmentation. Reconstruction aréolaire, cicatrices, vergetures.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Styles identiques à ldermo.html */
+        .hero-info {
+            text-align: center;
+            margin-top: 2rem;
+            color: #333;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;
+        }
+        .hero-address h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .hero-address p {
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+        }
+        .hero-distance {
+            font-style: italic;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+        }
+        .hero-phone {
+            margin-top: 1rem;
+        }
+        .phone-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #2c3e50;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        .phone-link:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .phone-link i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container" style="position:relative;">
+            <div class="nav-left">
+                <a href="https://www.instagram.com/sinkolor.tattoo/" target="_blank" class="nav-link" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.facebook.com/p/Sinkolortattoo-61557216517025/" target="_blank" class="nav-link" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="tel:0602120638" class="nav-link" aria-label="Téléphone"><i class="fas fa-phone"></i></a>
+            </div>
+            <div class="nav-center">
+            </div>
+            <ul id="menu" class="nav-menu">
+                <li><a href="index.html" class="nav-link">Retour à la page d'accueil</a></li>
+                <li><a href="ldermo-tarifs.html" class="nav-link">Tarification</a></li>
+            </ul>
+            <div class="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- LDermo Présentation -->
+    <section id="ldermo-presentation" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-image">
+                    <img src="images/ldermo.jpeg" alt="LDermo - Dermopigmentation" class="about-photo">
+                </div>
+                <div class="about-text">
+                    <h2>LDermo</h2>
+                    <p>Riche de plusieurs mois de formation sous le tutorat d'Anna Dermo, numéro 1 en France du tatouage réparateur et créatrice de la méthode Skin correct, Ldermo a pu recevoir les meilleurs outils et conseils visant à garantir des résultats époustouflants à sa clientèle.</p>
+                    <p>Que votre projet concerne des vergetures, une cicatrice, une peau brûlée ou greffée ou encore une reconstruction de l'aréole mammaire, Ldermo prendra le temps, lors d'une première consultation, de définir avec vous la méthode la plus adaptée à vos besoins pour que votre séance de tatouage et son résultat soient à la hauteur de vos attentes.</p>
+                    <p>Grâce à sa douceur, son empathie, sa bienveillance et ses explications, LDermo saura répondre à toutes vos questions et vous rassurer afin de chasser toute anxiété avant votre séance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio">
+        <div class="container">
+            <p class="section-subtitle">Découvrez les réalisations de LDermo</p>
+            
+            <div class="portfolio-controls" id="portfolioControls" style="display:flex; justify-content:center; margin-bottom: 3rem; margin-top: 2rem; gap: 1.5rem; padding: 1.5rem 0;">
+                <button id="toggleEditPortfolio" class="btn btn-primary" type="button" style="background: linear-gradient(135deg, #2c3e50, #34495e); border: none; padding: 12px 24px; border-radius: 25px; font-weight: 600; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3); transition: all 0.3s ease;">
+                    <i class="fas fa-edit" style="margin-right: 8px;"></i>Gérer les créations
+                </button>
+                <button id="addCreation" class="btn btn-secondary" type="button" style="display:none; background: linear-gradient(135deg, #27ae60, #2ecc71); border: none; padding: 12px 24px; border-radius: 25px; font-weight: 600; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); transition: all 0.3s ease;">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>Ajouter une création
+                </button>
+            </div>
+            
+            <!-- LDermo -->
+            <div id="portfolio-ldermo" class="portfolio-section">
+                <div class="portfolio-grid" id="portfolioGrid">
+                    <!-- Les créations seront chargées ici -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title">Contact</h2>
+            <p class="section-subtitle">Parlons de votre projet</p>
+            
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Téléphone</h3>
+                            <p><a href="tel:0602120638">0602120638</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Adresse du salon</h3>
+                            <p>9Av. 1ère Armée Françaises 44-45<br>54200 Toul<br>(à 20 min à pied de la gare et 10 minutes à pied de la gare routière)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <h3>Demander un devis</h3>
+                    <form id="contactForm" method="POST" action="https://formsubmit.co/lestatouables@gmail.com">
+                        <input type="hidden" name="_subject" value="Nouvelle demande de rendez-vous - LDermo">
+                        <input type="hidden" name="_template" value="table">
+                        <input type="hidden" name="_captcha" value="false">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" placeholder="Votre nom" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" placeholder="Votre email" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" name="message" placeholder="Décrivez votre projet de tatouage réparateur" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h3>Les Tatouables</h3>
+                    <p>Salon de Tatoueurs Professionnels</p>
+                </div>
+                <div class="footer-social">
+                    <a href="https://www.instagram.com/sinkolor.tattoo/" target="_blank" class="social-link">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.facebook.com/p/Sinkolortattoo-61557216517025/" target="_blank" class="social-link">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Les Tatouables . Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase
+        import { firebaseService } from './firebase-config.js';
+        
+        // Configuration
+        const ADMIN_PASSWORD = '03KinepolisdDiva23!';
+        const portfolioGrid = document.getElementById('portfolioGrid');
+        const toggleBtn = document.getElementById('toggleEditPortfolio');
+        const addBtn = document.getElementById('addCreation');
+        
+        let editMode = false;
+        let isAuthorized = false;
+        let creations = [];
+        
+        // Fonctions d'authentification
+        function hasSessionAuth(){
+            try { return sessionStorage.getItem('ldermoPortfolioAuth') === '1'; } catch(e) { return false; }
+        }
+        
+        function setSessionAuth(on){
+            try {
+                if (on) sessionStorage.setItem('ldermoPortfolioAuth','1');
+                else sessionStorage.removeItem('ldermoPortfolioAuth');
+            } catch(e) {}
+        }
+        
+        function requestAuth(){
+            if (isAuthorized || hasSessionAuth()) { isAuthorized = true; return true; }
+            const pwd = prompt('Entrez le mot de passe pour éditer les créations :');
+            if (pwd === ADMIN_PASSWORD){
+                isAuthorized = true;
+                setSessionAuth(true);
+                return true;
+            }
+            alert('Mot de passe incorrect');
+            return false;
+        }
+        
+        // Charger les créations depuis Firebase
+        async function loadCreations(){
+            const defaultCreations = [
+                { src: 'images/image19.jpeg', alt: 'Avant - Reconstruction mammaire', type: 'avant' },
+                { src: 'images/image20.jpeg', alt: 'Après - Reconstruction mammaire', type: 'après' }
+            ];
+            
+            try {
+                const firebaseCreations = await firebaseService.getLDermoCreations();
+                if (firebaseCreations.length > 0) {
+                    return firebaseCreations;
+                } else {
+                    // Si pas de créations dans Firebase, ajouter les créations par défaut
+                    for (const creation of defaultCreations) {
+                        await firebaseService.addLDermoCreation(creation);
+                    }
+                    return defaultCreations;
+                }
+            } catch (error) {
+                console.error('Erreur Firebase, fallback vers localStorage:', error);
+                return defaultCreations;
+            }
+        }
+        
+        // Afficher les créations
+        function renderCreations(){
+            portfolioGrid.innerHTML = '';
+            creations.forEach((creation, index) => {
+                const div = document.createElement('div');
+                div.className = 'portfolio-item';
+                div.setAttribute('data-category', 'dermo');
+                div.style.marginBottom = '8px';
+                
+                if (creation.type) {
+                    const labelDiv = document.createElement('div');
+                    labelDiv.style.cssText = 'text-align:center; font-weight:600; margin-bottom:8px;';
+                    
+                    const span = document.createElement('span');
+                    span.style.cssText = 'display:inline-block; padding:6px 10px; background:#f2f2f2; border-radius:999px; color:#333; font-size:0.95rem;';
+                    span.textContent = creation.type.charAt(0).toUpperCase() + creation.type.slice(1);
+                    
+                    labelDiv.appendChild(span);
+                    div.appendChild(labelDiv);
+                }
+                
+                const portfolioImage = document.createElement('div');
+                portfolioImage.className = 'portfolio-image';
+                portfolioImage.style.marginBottom = '0';
+                
+                const img = document.createElement('img');
+                img.src = creation.src;
+                img.alt = creation.alt;
+                img.loading = 'lazy';
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', () => openLightbox(creation.src, creation.alt));
+                
+                portfolioImage.appendChild(img);
+                div.appendChild(portfolioImage);
+                
+                if (editMode) {
+                    const controls = document.createElement('div');
+                    controls.style.cssText = 'position: absolute; top: 5px; right: 5px; display: flex; gap: 5px; z-index: 10;';
+                    
+                    const editButton = document.createElement('button');
+                    editButton.className = 'btn btn-secondary';
+                    editButton.type = 'button';
+                    editButton.textContent = 'Modifier';
+                    editButton.style.fontSize = '0.7rem';
+                    editButton.style.padding = '2px 6px';
+                    editButton.addEventListener('click', () => editCreation(creation.id || index));
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'btn btn-secondary';
+                    deleteButton.type = 'button';
+                    deleteButton.textContent = 'Supprimer';
+                    deleteButton.style.fontSize = '0.7rem';
+                    deleteButton.style.padding = '2px 6px';
+                    deleteButton.addEventListener('click', () => deleteCreation(creation.id || index));
+                    
+                    controls.appendChild(editButton);
+                    controls.appendChild(deleteButton);
+                    div.style.position = 'relative';
+                    div.appendChild(controls);
+                }
+                
+                portfolioGrid.appendChild(div);
+            });
+        }
+        
+        // Mode édition
+        function setEditMode(on){
+            editMode = !!on;
+            addBtn.style.display = on ? '' : 'none';
+            toggleBtn.textContent = on ? 'Terminer' : 'Gérer les créations';
+            renderCreations();
+        }
+        
+        // Éditer une création
+        async function editCreation(id){
+            if (!requestAuth()) return;
+            const creation = creations.find(c => c.id === id || creations.indexOf(c) === id);
+            if (!creation) return;
+            
+            const newSrc = prompt('Nouvelle URL de l\'image :', creation.src) || creation.src;
+            const newAlt = prompt('Nouvelle description :', creation.alt) || creation.alt;
+            const newType = prompt('Type (avant/après ou laisser vide) :', creation.type || '') || '';
+            
+            const updatedCreation = { src: newSrc, alt: newAlt, type: newType };
+            
+            try {
+                if (creation.id) {
+                    await firebaseService.updateLDermoCreation(creation.id, updatedCreation);
+                }
+                await loadAndRenderCreations();
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour:', error);
+                alert('Erreur lors de la mise à jour');
+            }
+        }
+        
+        // Supprimer une création
+        async function deleteCreation(id){
+            if (!requestAuth()) return;
+            if (!confirm('Supprimer cette création ?')) return;
+            
+            try {
+                const creation = creations.find(c => c.id === id || creations.indexOf(c) === id);
+                if (creation && creation.id) {
+                    await firebaseService.deleteLDermoCreation(creation.id);
+                }
+                await loadAndRenderCreations();
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                alert('Erreur lors de la suppression');
+            }
+        }
+        
+        // Ajouter une nouvelle création
+        async function addNewCreation(){
+            if (!requestAuth()) return;
+            const newSrc = prompt('URL de la nouvelle image :');
+            const newAlt = prompt('Description de la création :');
+            const newType = prompt('Type (avant/après ou laisser vide) :', '');
+            if (newSrc && newSrc.trim() && newAlt && newAlt.trim()) {
+                const newCreation = { src: newSrc.trim(), alt: newAlt.trim(), type: newType.trim() };
+                
+                try {
+                    await firebaseService.addLDermoCreation(newCreation);
+                    await loadAndRenderCreations();
+                } catch (error) {
+                    console.error('Erreur lors de l\'ajout:', error);
+                    alert('Erreur lors de l\'ajout');
+                }
+            }
+        }
+        
+        // Charger et afficher les créations
+        async function loadAndRenderCreations() {
+            creations = await loadCreations();
+            renderCreations();
+        }
+        
+        // Event listeners
+        toggleBtn.addEventListener('click', () => {
+            if (!editMode) {
+                if (!requestAuth()) return;
+            }
+            setEditMode(!editMode);
+        });
+        
+        addBtn.addEventListener('click', addNewCreation);
+        
+        // Initialiser au chargement de la page
+        loadAndRenderCreations();
+        
+        // Fonctions pour la lightbox
+        function openLightbox(src, alt) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            lightboxImg.src = src;
+            lightboxImg.alt = alt;
+            lightbox.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Event listeners pour la lightbox
+        document.getElementById('lightbox').addEventListener('click', closeLightbox);
+        document.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+    </script>
+</body>
+</html>
+
+

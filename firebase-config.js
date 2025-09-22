@@ -380,5 +380,55 @@ export const firebaseService = {
                 console.error('Erreur lors de la suppression de la création:', error);
                 throw error;
             }
+        },
+
+        // Fonctions pour supprimer TOUTES les données
+        async deleteAllFlashItems() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'flashItems'));
+                const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                console.log('Tous les flash items supprimés');
+            } catch (error) {
+                console.error('Erreur lors de la suppression des flash items:', error);
+                throw error;
+            }
+        },
+
+        async deleteAllSinkolorCreations() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'sinkolorCreations'));
+                const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                console.log('Toutes les créations Sinkolor supprimées');
+            } catch (error) {
+                console.error('Erreur lors de la suppression des créations Sinkolor:', error);
+                throw error;
+            }
+        },
+
+        async deleteAllLDermoTarifs() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'ldermoTarifs'));
+                const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                console.log('Tous les tarifs LDermo supprimés');
+            } catch (error) {
+                console.error('Erreur lors de la suppression des tarifs LDermo:', error);
+                throw error;
+            }
+        },
+
+        async deleteAllData() {
+            try {
+                console.log('🗑️ Suppression de toutes les données...');
+                await this.deleteAllFlashItems();
+                await this.deleteAllSinkolorCreations();
+                await this.deleteAllLDermoTarifs();
+                console.log('✅ Toutes les données supprimées avec succès');
+            } catch (error) {
+                console.error('❌ Erreur lors de la suppression de toutes les données:', error);
+                throw error;
+            }
         }
 };

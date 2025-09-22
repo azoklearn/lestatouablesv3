@@ -2,6 +2,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
 import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -19,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Fonctions pour gérer les données
 export const firebaseService = {
@@ -193,5 +195,102 @@ export const firebaseService = {
 
         onLDermoTarifsChange(callback) {
             return onSnapshot(collection(db, 'ldermoTarifs'), callback);
+        },
+
+        // Fonctions d'upload d'images
+        async uploadImage(file, folder = 'sinkolor-creations') {
+            try {
+                // Générer un nom unique pour le fichier
+                const timestamp = Date.now();
+                const fileName = `${folder}/${timestamp}_${file.name}`;
+                
+                // Créer une référence dans Firebase Storage
+                const storageRef = ref(storage, fileName);
+                
+                // Uploader le fichier
+                const snapshot = await uploadBytes(storageRef, file);
+                
+                // Obtenir l'URL de téléchargement
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                
+                return {
+                    url: downloadURL,
+                    path: fileName
+                };
+            } catch (error) {
+                console.error('Erreur lors de l\'upload de l\'image:', error);
+                throw error;
+            }
+        },
+
+        async deleteImage(imagePath) {
+            try {
+                const imageRef = ref(storage, imagePath);
+                await deleteObject(imageRef);
+            } catch (error) {
+                console.error('Erreur lors de la suppression de l\'image:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour ajouter une création Sinkolor avec upload d'image
+        async addSinkolorCreationWithImage(creation, imageFile) {
+            try {
+                let imageData = null;
+                let imagePath = null;
+                
+                // Uploader l'image si fournie
+                if (imageFile) {
+                    const uploadResult = await this.uploadImage(imageFile, 'sinkolor-creations');
+                    imageData = uploadResult.url;
+                    imagePath = uploadResult.path;
+                }
+                
+                // Ajouter la création avec l'URL de l'image
+                const creationData = {
+                    ...creation,
+                    imageData: imageData || creation.imageData,
+                    imagePath: imagePath,
+                    createdAt: new Date().toISOString()
+                };
+                
+                const docRef = await addDoc(collection(db, 'sinkolorCreations'), creationData);
+                return docRef.id;
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout de la création avec image:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour supprimer une création Sinkolor avec suppression de l'image
+        async deleteSinkolorCreationWithImage(creationId) {
+            try {
+                // Récupérer la création pour obtenir le chemin de l'image
+                const creation = await this.getSinkolorCreation(creationId);
+                
+                // Supprimer l'image si elle existe
+                if (creation && creation.imagePath) {
+                    await this.deleteImage(creation.imagePath);
+                }
+                
+                // Supprimer la création de la base de données
+                await this.deleteSinkolorCreation(creationId);
+            } catch (error) {
+                console.error('Erreur lors de la suppression de la création avec image:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour récupérer une création spécifique
+        async getSinkolorCreation(creationId) {
+            try {
+                const docRef = doc(db, 'sinkolorCreations', creationId);
+                const docSnap = await getDocs(collection(db, 'sinkolorCreations'));
+                const creation = docSnap.docs.find(doc => doc.id === creationId);
+                return creation ? { id: creation.id, ...creation.data() } : null;
+            } catch (error) {
+                console.error('Erreur lors de la récupération de la création:', error);
+                return null;
+            }
         }
 };

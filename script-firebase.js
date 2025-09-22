@@ -829,7 +829,34 @@ function showAddCreationModal() {
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">URL de l'image :</label>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Image de la création :</label>
+                <input type="file" id="creationImageFile" accept="image/*" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    background: white;
+                ">
+                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
+                    Formats acceptés : JPG, PNG, GIF, WebP (max 10MB)
+                </small>
+                <div id="imagePreview" style="
+                    margin-top: 1rem;
+                    text-align: center;
+                    display: none;
+                ">
+                    <img id="previewImg" style="
+                        max-width: 200px;
+                        max-height: 200px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    ">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Ou URL de l'image :</label>
                 <input type="url" id="creationImageUrl" placeholder="https://exemple.com/image.jpg" style="
                     width: 100%;
                     padding: 0.8rem;
@@ -837,6 +864,9 @@ function showAddCreationModal() {
                     border-radius: 8px;
                     font-size: 1rem;
                 ">
+                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
+                    Alternative : utilisez une URL d'image existante
+                </small>
             </div>
             
             <div style="display: flex; gap: 1rem; justify-content: flex-end;">
@@ -863,11 +893,31 @@ function showAddCreationModal() {
     
     document.body.appendChild(modal);
     
+    // Aperçu de l'image
+    const imageFileInput = document.getElementById('creationImageFile');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    imageFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+    
     // Gestionnaires d'événements
     document.getElementById('saveCreationBtn').addEventListener('click', async () => {
         const title = document.getElementById('creationTitle').value.trim();
         const description = document.getElementById('creationDescription').value.trim();
         const category = document.getElementById('creationCategory').value;
+        const imageFile = document.getElementById('creationImageFile').files[0];
         const imageUrl = document.getElementById('creationImageUrl').value.trim();
         
         if (!title) {
@@ -875,18 +925,47 @@ function showAddCreationModal() {
             return;
         }
         
+        // Validation de l'image
+        if (imageFile) {
+            if (imageFile.size > 10 * 1024 * 1024) { // 10MB
+                alert('L\'image est trop volumineuse (max 10MB)');
+                return;
+            }
+            if (!imageFile.type.startsWith('image/')) {
+                alert('Veuillez sélectionner un fichier image valide');
+                return;
+            }
+        }
+        
+        // Désactiver le bouton pendant l'upload
+        const saveBtn = document.getElementById('saveCreationBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Upload en cours...';
+        saveBtn.disabled = true;
+        
         try {
             const creation = {
                 title,
                 description,
-                category,
-                imageData: imageUrl || 'https://placehold.co/600x600?text=Création+Sinkolor'
+                category
             };
             
             if (firebaseService) {
-                await firebaseService.addSinkolorCreation(creation);
+                if (imageFile) {
+                    // Upload de l'image vers Firebase Storage
+                    await firebaseService.addSinkolorCreationWithImage(creation, imageFile);
+                } else if (imageUrl) {
+                    // Utiliser l'URL fournie
+                    creation.imageData = imageUrl;
+                    await firebaseService.addSinkolorCreation(creation);
+                } else {
+                    // Image par défaut
+                    creation.imageData = 'https://placehold.co/600x600?text=Création+Sinkolor';
+                    await firebaseService.addSinkolorCreation(creation);
+                }
             } else {
                 // Fallback localStorage
+                creation.imageData = imageUrl || 'https://placehold.co/600x600?text=Création+Sinkolor';
                 const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
                 existing.push(creation);
                 localStorage.setItem('sinkolorCreations', JSON.stringify(existing));
@@ -894,9 +973,14 @@ function showAddCreationModal() {
             }
             
             document.body.removeChild(modal);
+            showNotification('Création ajoutée avec succès !', 'success');
         } catch (error) {
             console.error('Erreur lors de l\'ajout:', error);
-            alert('Erreur lors de l\'ajout de la création');
+            alert('Erreur lors de l\'ajout de la création: ' + error.message);
+        } finally {
+            // Réactiver le bouton
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
         }
     });
     
@@ -913,11 +997,11 @@ async function editCreation(creationId) {
 
 // Fonction pour supprimer une création
 async function deleteCreation(creationId) {
-    if (!confirm('Supprimer cette création ?')) return;
+    if (!confirm('Supprimer cette création ? L\'image sera également supprimée.')) return;
     
     try {
         if (firebaseService) {
-            await firebaseService.deleteSinkolorCreation(creationId);
+            await firebaseService.deleteSinkolorCreationWithImage(creationId);
         } else {
             // Fallback localStorage
             const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
@@ -925,9 +1009,10 @@ async function deleteCreation(creationId) {
             localStorage.setItem('sinkolorCreations', JSON.stringify(filtered));
             renderSinkolorCreations(filtered);
         }
+        showNotification('Création supprimée avec succès !', 'success');
     } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression');
+        alert('Erreur lors de la suppression: ' + error.message);
     }
 }
 

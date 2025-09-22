@@ -552,8 +552,392 @@ async function initFlash() {
     }
 }
 
+// ============================
+// Sinkolor Creations (Firebase) — lecture + affichage
+// ============================
+async function readSinkolorCreations() {
+    if (firebaseService) {
+        try {
+            return await firebaseService.getSinkolorCreations();
+        } catch (error) {
+            console.error('Erreur Firebase, fallback vers localStorage:', error);
+            return readSinkolorCreationsLocalStorage();
+        }
+    }
+    return readSinkolorCreationsLocalStorage();
+}
+
+function readSinkolorCreationsLocalStorage() {
+    try {
+        const raw = localStorage.getItem('sinkolorCreations');
+        if (!raw) { return []; }
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+        console.error('Erreur de lecture sinkolorCreations localStorage', e);
+        return [];
+    }
+}
+
+async function renderSinkolorCreations(creations) {
+    const grid = document.getElementById('portfolioGrid');
+    if (!grid) return;
+    
+    // Ne pas vider la grille si elle n'est pas celle de Sinkolor
+    if (!document.querySelector('.sinkolor-page')) return;
+    
+    grid.innerHTML = '';
+    
+    if (!creations || creations.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'portfolio-item';
+        empty.style.textAlign = 'center';
+        empty.style.padding = '2rem';
+        empty.innerHTML = `
+            <div class="portfolio-image">
+                <i class="fas fa-palette" style="font-size: 3rem; color: #666;"></i>
+            </div>
+            <div class="portfolio-overlay">
+                <h3>Aucune création pour le moment</h3>
+                <p>Les créations de Sinkolor seront bientôt disponibles</p>
+            </div>
+        `;
+        grid.appendChild(empty);
+        return;
+    }
+    
+    creations.forEach(creation => {
+        const item = document.createElement('div');
+        item.className = 'portfolio-item';
+        item.setAttribute('data-category', creation.category || 'all');
+        item.setAttribute('data-creation-id', creation.id || '');
+        
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'portfolio-image';
+        
+        if (creation.imageData) {
+            const img = document.createElement('img');
+            img.src = creation.imageData;
+            img.alt = creation.title || 'Création Sinkolor';
+            img.loading = 'lazy';
+            imageDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-palette';
+            icon.style.fontSize = '3rem';
+            icon.style.color = '#666';
+            imageDiv.appendChild(icon);
+        }
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'portfolio-overlay';
+        overlay.innerHTML = `
+            <h3>${creation.title || 'Création Sinkolor'}</h3>
+            <p>${creation.description || 'Tatouage artistique'}</p>
+            <a href="#contact" class="portfolio-link">Demander un devis</a>
+        `;
+        
+        item.appendChild(imageDiv);
+        item.appendChild(overlay);
+        grid.appendChild(item);
+    });
+}
+
+async function initSinkolorCreations() {
+    // Initialiser Firebase
+    await initFirebase();
+    
+    // Charger les créations
+    let creations = await readSinkolorCreations();
+    
+    // Seed initial si vide (une seule fois)
+    try {
+        const seeded = localStorage.getItem('sinkolorSeeded');
+        if ((!creations || creations.length === 0) && !seeded) {
+            const defaultCreations = [
+                { 
+                    title: "Tatouage Manga #1", 
+                    description: "Création inspirée de l'univers manga",
+                    category: "manga",
+                    imageData: 'https://placehold.co/600x600?text=Manga+1' 
+                },
+                { 
+                    title: "Tatouage Disney #2", 
+                    description: "Personnage Disney stylisé",
+                    category: "disney",
+                    imageData: 'https://placehold.co/600x600?text=Disney+2' 
+                },
+                { 
+                    title: "Pop Culture #3", 
+                    description: "Référence culturelle moderne",
+                    category: "pop",
+                    imageData: 'https://placehold.co/600x600?text=Pop+Culture+3' 
+                }
+            ];
+            
+            if (firebaseService) {
+                // Ajouter à Firebase
+                for (const creation of defaultCreations) {
+                    await firebaseService.addSinkolorCreation(creation);
+                }
+            } else {
+                // Fallback localStorage
+                localStorage.setItem('sinkolorCreations', JSON.stringify(defaultCreations));
+            }
+            localStorage.setItem('sinkolorSeeded', '1');
+            creations = await readSinkolorCreations();
+        }
+    } catch (e) { 
+        console.warn('Seed Sinkolor ignoré:', e); 
+    }
+    
+    await renderSinkolorCreations(creations);
+    
+    // Écouter les changements en temps réel si Firebase est disponible
+    if (firebaseService) {
+        firebaseService.onSinkolorCreationsChange((snapshot) => {
+            const newCreations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderSinkolorCreations(newCreations);
+        });
+    }
+    
+    // Gestion des boutons d'administration
+    const toggleEditBtn = document.getElementById('toggleEditPortfolio');
+    const addCreationBtn = document.getElementById('addCreation');
+    
+    if (toggleEditBtn && addCreationBtn) {
+        let editMode = false;
+        
+        toggleEditBtn.addEventListener('click', () => {
+            editMode = !editMode;
+            addCreationBtn.style.display = editMode ? 'block' : 'none';
+            toggleEditBtn.innerHTML = editMode ? 
+                '<i class="fas fa-times" style="margin-right: 8px;"></i>Terminer' : 
+                '<i class="fas fa-edit" style="margin-right: 8px;"></i>Gérer les créations';
+            
+            // Ajouter/supprimer les boutons d'édition sur chaque création
+            const portfolioItems = document.querySelectorAll('#portfolioGrid .portfolio-item');
+            portfolioItems.forEach(item => {
+                let editControls = item.querySelector('.edit-controls');
+                if (editMode && !editControls) {
+                    editControls = document.createElement('div');
+                    editControls.className = 'edit-controls';
+                    editControls.style.cssText = 'position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10;';
+                    
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-secondary';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    editBtn.style.cssText = 'padding: 5px 8px; font-size: 0.8rem;';
+                    editBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const creationId = item.getAttribute('data-creation-id');
+                        if (creationId) editCreation(creationId);
+                    });
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-secondary';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.style.cssText = 'padding: 5px 8px; font-size: 0.8rem; background: #e74c3c;';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const creationId = item.getAttribute('data-creation-id');
+                        if (creationId) deleteCreation(creationId);
+                    });
+                    
+                    editControls.appendChild(editBtn);
+                    editControls.appendChild(deleteBtn);
+                    item.style.position = 'relative';
+                    item.appendChild(editControls);
+                } else if (!editMode && editControls) {
+                    editControls.remove();
+                }
+            });
+        });
+        
+        addCreationBtn.addEventListener('click', () => {
+            showAddCreationModal();
+        });
+    }
+}
+
+// Fonction pour afficher le modal d'ajout de création
+function showAddCreationModal() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        ">
+            <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">Ajouter une création Sinkolor</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Titre :</label>
+                <input type="text" id="creationTitle" placeholder="Titre de la création" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Description :</label>
+                <textarea id="creationDescription" placeholder="Description de la création" rows="3" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    resize: vertical;
+                "></textarea>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Catégorie :</label>
+                <select id="creationCategory" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+                    <option value="manga">Manga</option>
+                    <option value="disney">Disney</option>
+                    <option value="pop">Pop Culture</option>
+                    <option value="anime">Anime</option>
+                    <option value="other">Autre</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">URL de l'image :</label>
+                <input type="url" id="creationImageUrl" placeholder="https://exemple.com/image.jpg" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancelCreationBtn" style="
+                    padding: 0.8rem 1.5rem;
+                    border: 2px solid #ddd;
+                    background: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Annuler</button>
+                <button id="saveCreationBtn" style="
+                    padding: 0.8rem 1.5rem;
+                    background: linear-gradient(135deg, #27ae60, #2ecc71);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Ajouter</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Gestionnaires d'événements
+    document.getElementById('saveCreationBtn').addEventListener('click', async () => {
+        const title = document.getElementById('creationTitle').value.trim();
+        const description = document.getElementById('creationDescription').value.trim();
+        const category = document.getElementById('creationCategory').value;
+        const imageUrl = document.getElementById('creationImageUrl').value.trim();
+        
+        if (!title) {
+            alert('Veuillez entrer un titre');
+            return;
+        }
+        
+        try {
+            const creation = {
+                title,
+                description,
+                category,
+                imageData: imageUrl || 'https://placehold.co/600x600?text=Création+Sinkolor'
+            };
+            
+            if (firebaseService) {
+                await firebaseService.addSinkolorCreation(creation);
+            } else {
+                // Fallback localStorage
+                const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
+                existing.push(creation);
+                localStorage.setItem('sinkolorCreations', JSON.stringify(existing));
+                renderSinkolorCreations(existing);
+            }
+            
+            document.body.removeChild(modal);
+        } catch (error) {
+            console.error('Erreur lors de l\'ajout:', error);
+            alert('Erreur lors de l\'ajout de la création');
+        }
+    });
+    
+    document.getElementById('cancelCreationBtn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+}
+
+// Fonction pour éditer une création
+async function editCreation(creationId) {
+    // Implémentation de l'édition (similaire à l'ajout)
+    console.log('Édition de la création:', creationId);
+}
+
+// Fonction pour supprimer une création
+async function deleteCreation(creationId) {
+    if (!confirm('Supprimer cette création ?')) return;
+    
+    try {
+        if (firebaseService) {
+            await firebaseService.deleteSinkolorCreation(creationId);
+        } else {
+            // Fallback localStorage
+            const existing = JSON.parse(localStorage.getItem('sinkolorCreations') || '[]');
+            const filtered = existing.filter(c => c.id !== creationId);
+            localStorage.setItem('sinkolorCreations', JSON.stringify(filtered));
+            renderSinkolorCreations(filtered);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initFlash();
+    
+    // Initialiser les créations Sinkolor si on est sur la page Sinkolor
+    if (document.querySelector('.sinkolor-page') || window.location.pathname.includes('sinkolor')) {
+        initSinkolorCreations();
+    }
 });
 
 

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialisation des données Firebase - Les Tatouables</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .section h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Initialisation des données Firebase</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Ce script va créer automatiquement les collections et données par défaut dans Firebase
+        </p>
+
+        <!-- LDermo Tarifs -->
+        <div class="section">
+            <h2>💰 LDermo Tarifs</h2>
+            <p>Créer la collection <code>ldermoTarifs</code> avec les tarifs par défaut</p>
+            <div class="data-preview">Collection: ldermoTarifs
+Documents à créer:
+- Consultation (0€ - 30€)
+- Reconstruction aréolaire (Sur devis)
+- Cicatrices et vergetures (Sur devis)</div>
+            <button onclick="initLDermoTarifs()" id="btn-tarifs">Initialiser les tarifs LDermo</button>
+            <div id="status-tarifs"></div>
+        </div>
+
+        <!-- LDermo Créations -->
+        <div class="section">
+            <h2>🎨 LDermo Créations</h2>
+            <p>Créer la collection <code>ldermoCreations</code> avec les créations par défaut</p>
+            <div class="data-preview">Collection: ldermoCreations
+Documents à créer:
+- Avant - Reconstruction mammaire
+- Après - Reconstruction mammaire</div>
+            <button onclick="initLDermoCreations()" id="btn-creations">Initialiser les créations LDermo</button>
+            <div id="status-creations"></div>
+        </div>
+
+        <!-- Sinkolor Créations -->
+        <div class="section">
+            <h2>🎭 Sinkolor Créations</h2>
+            <p>Créer la collection <code>sinkolorCreations</code> avec les créations par défaut</p>
+            <div class="data-preview">Collection: sinkolorCreations
+Documents à créer (8 créations existantes):
+- Tatouage S'inkolor 9 (image9.jpeg)
+- Tatouage S'inkolor 10 (image10.jpeg)
+- Tatouage S'inkolor 12 (image12.jpeg)
+- Tatouage S'inkolor 13 (image13.jpeg)
+- Tatouage S'inkolor 14 (image14.jpeg)
+- Tatouage S'inkolor 15 (image15.jpeg)
+- Tatouage S'inkolor 16 (image16.jpeg)
+- Tatouage S'inkolor 17 (image17.jpeg)</div>
+            <button onclick="initSinkolorCreations()" id="btn-sinkolor">Initialiser les créations Sinkolor</button>
+            <div id="status-sinkolor"></div>
+        </div>
+
+        <!-- Flash Items -->
+        <div class="section">
+            <h2>⚡ Flash Items</h2>
+            <p>Créer la collection <code>flashItems</code> avec les flash par défaut</p>
+            <div class="data-preview">Collection: flashItems
+Documents à créer:
+- Flash Manga #1
+- Flash Anime #2
+- Pop Culture #3</div>
+            <button onclick="initFlashItems()" id="btn-flash">Initialiser les flash items</button>
+            <div id="status-flash"></div>
+        </div>
+
+        <!-- Tout initialiser -->
+        <div class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h2 style="color: white;">🚀 Initialiser Tout</h2>
+            <p>Initialiser toutes les collections en une fois</p>
+            <button onclick="initAll()" id="btn-all" style="background: white; color: #667eea;">Initialiser toutes les collections</button>
+            <div id="status-all"></div>
+        </div>
+
+        <!-- Vérifier les collections -->
+        <div class="section">
+            <h2>🔍 Vérifier les Collections</h2>
+            <p>Voir le contenu actuel des collections Firebase</p>
+            <button onclick="checkCollections()" id="btn-check">Vérifier les collections</button>
+            <div id="status-check"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { firebaseService } from './firebase-config.js';
+
+        // Données par défaut pour LDermo Tarifs
+        const defaultTarifs = [
+            {
+                title: 'Consultation',
+                description: 'Première consultation pour évaluer votre projet et définir la méthode adaptée',
+                price: '0€ - 30€'
+            },
+            {
+                title: 'Reconstruction aréolaire',
+                description: 'Reconstruction complète de l\'aréole mammaire après chirurgie',
+                price: 'Sur devis'
+            },
+            {
+                title: 'Cicatrices et vergetures',
+                description: 'Camouflage et amélioration de l\'apparence des cicatrices et vergetures',
+                price: 'Sur devis'
+            }
+        ];
+
+        // Données par défaut pour LDermo Créations
+        const defaultLDermoCreations = [
+            {
+                src: 'images/image19.jpeg',
+                alt: 'Avant - Reconstruction mammaire',
+                type: 'avant'
+            },
+            {
+                src: 'images/image20.jpeg',
+                alt: 'Après - Reconstruction mammaire',
+                type: 'après'
+            }
+        ];
+
+        // Données par défaut pour Sinkolor Créations (basées sur les créations existantes)
+        const defaultSinkolorCreations = [
+            {
+                src: 'images/image9.jpeg',
+                alt: 'Tatouage S\'inkolor 9',
+                title: 'Tatouage S\'inkolor 9',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image10.jpeg',
+                alt: 'Tatouage S\'inkolor 10',
+                title: 'Tatouage S\'inkolor 10',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image12.jpeg',
+                alt: 'Tatouage S\'inkolor 12',
+                title: 'Tatouage S\'inkolor 12',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image13.jpeg',
+                alt: 'Tatouage S\'inkolor 13',
+                title: 'Tatouage S\'inkolor 13',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image14.jpeg',
+                alt: 'Tatouage S\'inkolor 14',
+                title: 'Tatouage S\'inkolor 14',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image15.jpeg',
+                alt: 'Tatouage S\'inkolor 15',
+                title: 'Tatouage S\'inkolor 15',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image16.jpeg',
+                alt: 'Tatouage S\'inkolor 16',
+                title: 'Tatouage S\'inkolor 16',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            },
+            {
+                src: 'images/image17.jpeg',
+                alt: 'Tatouage S\'inkolor 17',
+                title: 'Tatouage S\'inkolor 17',
+                category: 'tatouage',
+                tags: 'art, créatif'
+            }
+        ];
+
+        // Données par défaut pour Flash Items
+        const defaultFlashItems = [
+            {
+                title: 'Flash Manga #1',
+                tags: ['manga', 'couleur'],
+                imageData: 'https://placehold.co/800x800?text=Flash+Manga+1'
+            },
+            {
+                title: 'Flash Anime #2',
+                tags: ['anime', 'line'],
+                imageData: 'https://placehold.co/800x800?text=Flash+Anime+2'
+            },
+            {
+                title: 'Pop Culture #3',
+                tags: ['pop', 'culture'],
+                imageData: 'https://placehold.co/800x800?text=Pop+Culture+3'
+            }
+        ];
+
+        // Fonction utilitaire pour afficher le statut
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Fonction utilitaire pour désactiver/activer un bouton
+        function setButtonState(buttonId, disabled, text) {
+            const button = document.getElementById(buttonId);
+            button.disabled = disabled;
+            button.textContent = text;
+        }
+
+        // Initialiser les tarifs LDermo
+        window.initLDermoTarifs = async function() {
+            setButtonState('btn-tarifs', true, 'Initialisation...');
+            showStatus('status-tarifs', 'Initialisation des tarifs LDermo...', 'info');
+
+            try {
+                // Vérifier si des tarifs existent déjà
+                const existingTarifs = await firebaseService.getLDermoTarifs();
+                if (existingTarifs.length > 0) {
+                    showStatus('status-tarifs', `✅ ${existingTarifs.length} tarifs LDermo existent déjà`, 'success');
+                    setButtonState('btn-tarifs', false, 'Initialiser les tarifs LDermo');
+                    return;
+                }
+
+                // Ajouter les tarifs par défaut
+                for (const tarif of defaultTarifs) {
+                    await firebaseService.addLDermoTarif(tarif);
+                }
+
+                showStatus('status-tarifs', `✅ ${defaultTarifs.length} tarifs LDermo créés avec succès !`, 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation des tarifs LDermo:', error);
+                showStatus('status-tarifs', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-tarifs', false, 'Initialiser les tarifs LDermo');
+            }
+        };
+
+        // Initialiser les créations LDermo
+        window.initLDermoCreations = async function() {
+            setButtonState('btn-creations', true, 'Initialisation...');
+            showStatus('status-creations', 'Initialisation des créations LDermo...', 'info');
+
+            try {
+                // Vérifier si des créations existent déjà
+                const existingCreations = await firebaseService.getLDermoCreations();
+                if (existingCreations.length > 0) {
+                    showStatus('status-creations', `✅ ${existingCreations.length} créations LDermo existent déjà`, 'success');
+                    setButtonState('btn-creations', false, 'Initialiser les créations LDermo');
+                    return;
+                }
+
+                // Ajouter les créations par défaut
+                for (const creation of defaultLDermoCreations) {
+                    await firebaseService.addLDermoCreation(creation);
+                }
+
+                showStatus('status-creations', `✅ ${defaultLDermoCreations.length} créations LDermo créées avec succès !`, 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation des créations LDermo:', error);
+                showStatus('status-creations', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-creations', false, 'Initialiser les créations LDermo');
+            }
+        };
+
+        // Initialiser les créations Sinkolor
+        window.initSinkolorCreations = async function() {
+            setButtonState('btn-sinkolor', true, 'Initialisation...');
+            showStatus('status-sinkolor', 'Initialisation des créations Sinkolor...', 'info');
+
+            try {
+                // Vérifier si des créations existent déjà
+                const existingCreations = await firebaseService.getSinkolorCreations();
+                if (existingCreations.length > 0) {
+                    showStatus('status-sinkolor', `✅ ${existingCreations.length} créations Sinkolor existent déjà`, 'success');
+                    setButtonState('btn-sinkolor', false, 'Initialiser les créations Sinkolor');
+                    return;
+                }
+
+                // Ajouter les créations par défaut
+                for (const creation of defaultSinkolorCreations) {
+                    await firebaseService.addSinkolorCreation(creation);
+                }
+
+                showStatus('status-sinkolor', `✅ ${defaultSinkolorCreations.length} créations Sinkolor créées avec succès !`, 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation des créations Sinkolor:', error);
+                showStatus('status-sinkolor', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-sinkolor', false, 'Initialiser les créations Sinkolor');
+            }
+        };
+
+        // Initialiser les flash items
+        window.initFlashItems = async function() {
+            setButtonState('btn-flash', true, 'Initialisation...');
+            showStatus('status-flash', 'Initialisation des flash items...', 'info');
+
+            try {
+                // Vérifier si des flash items existent déjà
+                const existingItems = await firebaseService.getFlashItems();
+                if (existingItems.length > 0) {
+                    showStatus('status-flash', `✅ ${existingItems.length} flash items existent déjà`, 'success');
+                    setButtonState('btn-flash', false, 'Initialiser les flash items');
+                    return;
+                }
+
+                // Ajouter les flash items par défaut
+                for (const item of defaultFlashItems) {
+                    await firebaseService.addFlashItem(item);
+                }
+
+                showStatus('status-flash', `✅ ${defaultFlashItems.length} flash items créés avec succès !`, 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation des flash items:', error);
+                showStatus('status-flash', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-flash', false, 'Initialiser les flash items');
+            }
+        };
+
+        // Initialiser toutes les collections
+        window.initAll = async function() {
+            setButtonState('btn-all', true, 'Initialisation...');
+            showStatus('status-all', 'Initialisation de toutes les collections...', 'info');
+
+            try {
+                await initLDermoTarifs();
+                await initLDermoCreations();
+                await initSinkolorCreations();
+                await initFlashItems();
+
+                showStatus('status-all', '✅ Toutes les collections ont été initialisées avec succès !', 'success');
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation:', error);
+                showStatus('status-all', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-all', false, 'Initialiser toutes les collections');
+            }
+        };
+
+        // Vérifier les collections
+        window.checkCollections = async function() {
+            setButtonState('btn-check', true, 'Vérification...');
+            showStatus('status-check', 'Vérification des collections...', 'info');
+
+            try {
+                const [tarifs, lDermoCreations, sinkolorCreations, flashItems] = await Promise.all([
+                    firebaseService.getLDermoTarifs(),
+                    firebaseService.getLDermoCreations(),
+                    firebaseService.getSinkolorCreations(),
+                    firebaseService.getFlashItems()
+                ]);
+
+                const summary = `
+📊 Résumé des collections Firebase:
+
+💰 LDermo Tarifs: ${tarifs.length} documents
+🎨 LDermo Créations: ${lDermoCreations.length} documents  
+🎭 Sinkolor Créations: ${sinkolorCreations.length} documents
+⚡ Flash Items: ${flashItems.length} documents
+
+Total: ${tarifs.length + lDermoCreations.length + sinkolorCreations.length + flashItems.length} documents
+                `;
+
+                showStatus('status-check', summary, 'success');
+            } catch (error) {
+                console.error('Erreur lors de la vérification:', error);
+                showStatus('status-check', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                setButtonState('btn-check', false, 'Vérifier les collections');
+            }
+        };
+
+        // Vérifier les collections au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkCollections();
+        });
+    </script>
+</body>
+</html>

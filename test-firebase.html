@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase - Les Tatouables</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-section {
+            background: #2d2d2d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Test Firebase - Les Tatouables</h1>
+    
+    <div class="test-section">
+        <h2>État de la connexion</h2>
+        <p id="connection-status" class="info">Test en cours...</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test des fonctionnalités</h2>
+        <button onclick="testAddFlashItem()">Ajouter un flash test</button>
+        <button onclick="testGetFlashItems()">Récupérer les flash items</button>
+        <button onclick="testAddLDermoCreation()">Ajouter une création LDermo</button>
+        <button onclick="testGetLDermoCreations()">Récupérer les créations LDermo</button>
+        <button onclick="clearLog()">Effacer le log</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Log des opérations</h2>
+        <div id="log">En attente des tests...\n</div>
+    </div>
+
+    <script type="module">
+        import { firebaseService } from './firebase-config.js';
+        
+        let logElement = document.getElementById('log');
+        let statusElement = document.getElementById('connection-status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+        
+        // Test de connexion
+        async function testConnection() {
+            try {
+                log('Test de connexion à Firebase...');
+                const flashItems = await firebaseService.getFlashItems();
+                statusElement.textContent = '✅ Connexion Firebase réussie !';
+                statusElement.className = 'success';
+                log(`Connexion réussie. ${flashItems.length} flash items trouvés.`, 'success');
+            } catch (error) {
+                statusElement.textContent = '❌ Erreur de connexion Firebase';
+                statusElement.className = 'error';
+                log(`Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test d'ajout d'un flash item
+        window.testAddFlashItem = async function() {
+            try {
+                log('Ajout d\'un flash item test...');
+                const testItem = {
+                    title: 'Test Flash ' + Date.now(),
+                    tags: ['test', 'demo'],
+                    imageData: 'https://placehold.co/600x600?text=Test+Flash'
+                };
+                const id = await firebaseService.addFlashItem(testItem);
+                log(`Flash item ajouté avec l'ID: ${id}`, 'success');
+            } catch (error) {
+                log(`Erreur lors de l'ajout: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test de récupération des flash items
+        window.testGetFlashItems = async function() {
+            try {
+                log('Récupération des flash items...');
+                const items = await firebaseService.getFlashItems();
+                log(`${items.length} flash items récupérés:`, 'success');
+                items.forEach((item, index) => {
+                    log(`  ${index + 1}. ${item.title} (ID: ${item.id})`);
+                });
+            } catch (error) {
+                log(`Erreur lors de la récupération: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test d'ajout d'une création LDermo
+        window.testAddLDermoCreation = async function() {
+            try {
+                log('Ajout d\'une création LDermo test...');
+                const testCreation = {
+                    src: 'https://placehold.co/400x400?text=Test+LDermo',
+                    alt: 'Test création LDermo ' + Date.now(),
+                    type: 'test'
+                };
+                const id = await firebaseService.addLDermoCreation(testCreation);
+                log(`Création LDermo ajoutée avec l'ID: ${id}`, 'success');
+            } catch (error) {
+                log(`Erreur lors de l'ajout: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test de récupération des créations LDermo
+        window.testGetLDermoCreations = async function() {
+            try {
+                log('Récupération des créations LDermo...');
+                const creations = await firebaseService.getLDermoCreations();
+                log(`${creations.length} créations LDermo récupérées:`, 'success');
+                creations.forEach((creation, index) => {
+                    log(`  ${index + 1}. ${creation.alt} (ID: ${creation.id})`);
+                });
+            } catch (error) {
+                log(`Erreur lors de la récupération: ${error.message}`, 'error');
+            }
+        };
+        
+        // Fonction globale pour effacer le log
+        window.clearLog = clearLog;
+        
+        // Initialiser le test
+        testConnection();
+    </script>
+</body>
+</html>
+
+

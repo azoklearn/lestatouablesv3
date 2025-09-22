@@ -111,8 +111,44 @@
             try {
                 console.log('🗑️ Début de la suppression de toutes les données...');
                 
-                // Supprimer toutes les données Firebase
-                await firebaseService.deleteAllData();
+                // Méthode alternative : supprimer les données une par une
+                let deletedCount = 0;
+                
+                // Supprimer les tarifs LDermo
+                try {
+                    const tarifs = await firebaseService.getLDermoTarifs();
+                    for (const tarif of tarifs) {
+                        await firebaseService.deleteLDermoTarif(tarif.id);
+                        deletedCount++;
+                    }
+                    console.log(`✅ ${tarifs.length} tarifs LDermo supprimés`);
+                } catch (error) {
+                    console.log('⚠️ Erreur suppression tarifs:', error.message);
+                }
+                
+                // Supprimer les flash items
+                try {
+                    const flashItems = await firebaseService.getFlashItems();
+                    for (const item of flashItems) {
+                        await firebaseService.deleteFlashItem(item.id);
+                        deletedCount++;
+                    }
+                    console.log(`✅ ${flashItems.length} flash items supprimés`);
+                } catch (error) {
+                    console.log('⚠️ Erreur suppression flash:', error.message);
+                }
+                
+                // Supprimer les créations Sinkolor
+                try {
+                    const sinkolorCreations = await firebaseService.getSinkolorCreations();
+                    for (const creation of sinkolorCreations) {
+                        await firebaseService.deleteSinkolorCreation(creation.id);
+                        deletedCount++;
+                    }
+                    console.log(`✅ ${sinkolorCreations.length} créations Sinkolor supprimées`);
+                } catch (error) {
+                    console.log('⚠️ Erreur suppression Sinkolor:', error.message);
+                }
                 
                 // Supprimer aussi le localStorage
                 localStorage.removeItem('ldermoTarifs.v1');
@@ -121,7 +157,7 @@
                 localStorage.removeItem('ldermoCreations.v1');
                 
                 console.log('✅ Suppression terminée !');
-                status.innerHTML = '<div class="status success">✅ Toutes les données ont été supprimées avec succès !<br><br>Le site va se recharger dans 3 secondes...</div>';
+                status.innerHTML = `<div class="status success">✅ Suppression terminée !<br><br>${deletedCount} éléments supprimés<br><br>Le site va se recharger dans 3 secondes...</div>`;
                 
                 // Recharger la page après 3 secondes
                 setTimeout(() => {
@@ -130,7 +166,7 @@
                 
             } catch (error) {
                 console.error('❌ Erreur lors de la suppression:', error);
-                status.innerHTML = `<div class="status error">❌ Erreur lors de la suppression : ${error.message}</div>`;
+                status.innerHTML = `<div class="status error">❌ Erreur lors de la suppression : ${error.message}<br><br>💡 Solution : Vérifiez les règles Firebase dans firebase-rules.txt</div>`;
                 deleteBtn.disabled = false;
                 deleteBtn.textContent = 'Supprimer toutes les données';
             }

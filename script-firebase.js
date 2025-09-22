@@ -655,6 +655,8 @@ async function initFlash() {
 // Sinkolor Creations (Firebase) — lecture + affichage
 // ============================
 async function readSinkolorCreations() {
+    console.log('📚 Début readSinkolorCreations...');
+    
     const defaultCreations = [
         { 
             title: "Tatouage Manga #1", 
@@ -677,19 +679,26 @@ async function readSinkolorCreations() {
     ];
     
     try {
+        console.log('🔥 Lecture depuis Firebase...');
         const firebaseCreations = await firebaseService.getSinkolorCreations();
+        console.log('🔥 Créations Firebase:', firebaseCreations);
+        
         if (firebaseCreations.length > 0) {
+            console.log('✅ Créations trouvées dans Firebase, retour des données');
             return firebaseCreations;
         } else {
+            console.log('📝 Aucune création dans Firebase, ajout des créations par défaut...');
             // Si pas de créations dans Firebase, ajouter les créations par défaut
             for (const creation of defaultCreations) {
                 await firebaseService.addSinkolorCreation(creation);
             }
+            console.log('✅ Créations par défaut ajoutées');
             return defaultCreations;
         }
     } catch (error) {
-        console.error('Erreur Firebase:', error);
+        console.error('❌ Erreur Firebase:', error);
         // Pas de fallback localStorage - uniquement Firebase
+        console.log('⚠️ Retour d\'un tableau vide');
         return [];
     }
 }
@@ -697,15 +706,29 @@ async function readSinkolorCreations() {
 // Fonction localStorage supprimée - uniquement Firebase
 
 async function renderSinkolorCreations(creations) {
+    console.log('🎨 Début renderSinkolorCreations...');
+    console.log('📊 Créations reçues:', creations);
+    
     const grid = document.getElementById('portfolioGrid');
-    if (!grid) return;
+    console.log('🔍 Grille trouvée:', !!grid);
+    if (!grid) {
+        console.error('❌ Grille portfolioGrid non trouvée!');
+        return;
+    }
     
     // Ne pas vider la grille si elle n'est pas celle de Sinkolor
-    if (!document.querySelector('.sinkolor-page')) return;
+    const isSinkolorPage = document.querySelector('.sinkolor-page');
+    console.log('🔍 Page Sinkolor détectée:', !!isSinkolorPage);
+    if (!isSinkolorPage) {
+        console.log('⚠️ Pas sur la page Sinkolor, arrêt du rendu');
+        return;
+    }
     
+    console.log('🧹 Vidage de la grille...');
     grid.innerHTML = '';
     
     if (!creations || creations.length === 0) {
+        console.log('📭 Aucune création, affichage du message vide');
         const empty = document.createElement('div');
         empty.className = 'portfolio-item';
         empty.style.textAlign = 'center';
@@ -723,7 +746,11 @@ async function renderSinkolorCreations(creations) {
         return;
     }
     
-    creations.forEach(creation => {
+    console.log('🎨 Rendu de', creations.length, 'créations...');
+    
+    creations.forEach((creation, index) => {
+        console.log(`🎨 Création ${index + 1}:`, creation);
+        
         const item = document.createElement('div');
         item.className = 'portfolio-item';
         item.setAttribute('data-category', creation.category || 'all');
@@ -733,12 +760,14 @@ async function renderSinkolorCreations(creations) {
         imageDiv.className = 'portfolio-image';
         
         if (creation.imageData) {
+            console.log(`🖼️ Image trouvée pour création ${index + 1}:`, creation.imageData);
             const img = document.createElement('img');
             img.src = creation.imageData;
             img.alt = creation.title || 'Création Sinkolor';
             img.loading = 'lazy';
             imageDiv.appendChild(img);
         } else {
+            console.log(`🎨 Pas d'image pour création ${index + 1}, icône par défaut`);
             const icon = document.createElement('i');
             icon.className = 'fas fa-palette';
             icon.style.fontSize = '3rem';
@@ -757,7 +786,11 @@ async function renderSinkolorCreations(creations) {
         item.appendChild(imageDiv);
         item.appendChild(overlay);
         grid.appendChild(item);
+        
+        console.log(`✅ Création ${index + 1} ajoutée à la grille`);
     });
+    
+    console.log('🎨 Rendu terminé,', grid.children.length, 'éléments dans la grille');
 }
 
 // Système d'authentification pour Sinkolor
@@ -797,19 +830,31 @@ function requestSinkolorAuth() {
 }
 
 async function initSinkolorCreations() {
+    console.log('🎨 Début initSinkolorCreations...');
+    
     // Initialiser Firebase
+    console.log('🔥 Initialisation Firebase...');
     await initFirebase();
+    console.log('✅ Firebase initialisé');
     
     // Charger les créations (avec seed automatique si nécessaire)
+    console.log('📚 Lecture des créations...');
     const creations = await readSinkolorCreations();
+    console.log('📚 Créations lues:', creations);
+    
+    console.log('🎨 Rendu des créations...');
     await renderSinkolorCreations(creations);
+    console.log('✅ Créations rendues');
     
     // Écouter les changements en temps réel si Firebase est disponible
     if (firebaseService) {
+        console.log('👂 Écoute des changements Firebase...');
         firebaseService.onSinkolorCreationsChange((snapshot) => {
             const newCreations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderSinkolorCreations(newCreations);
         });
+    } else {
+        console.log('⚠️ Firebase service non disponible');
     }
     
     // Gestion des boutons d'administration
@@ -1362,11 +1407,23 @@ async function deleteFlash(flashId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initialisation des scripts Firebase...');
+    
+    // Toujours initialiser Flash
     initFlash();
     
     // Initialiser les créations Sinkolor si on est sur la page Sinkolor
-    if (document.querySelector('.sinkolor-page') || window.location.pathname.includes('sinkolor')) {
-        initSinkolorCreations();
+    const isSinkolorPage = document.querySelector('.sinkolor-page') || window.location.pathname.includes('sinkolor');
+    console.log('📄 Page Sinkolor détectée:', isSinkolorPage);
+    console.log('🔍 Classe sinkolor-page trouvée:', !!document.querySelector('.sinkolor-page'));
+    console.log('🔍 URL contient sinkolor:', window.location.pathname.includes('sinkolor'));
+    
+    if (isSinkolorPage) {
+        console.log('🎨 Initialisation des créations Sinkolor...');
+        // Appeler directement sans await pour éviter les problèmes
+        initSinkolorCreations().catch(error => {
+            console.error('❌ Erreur lors de l\'initialisation Sinkolor:', error);
+        });
     }
 });
 

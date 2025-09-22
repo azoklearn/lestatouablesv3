@@ -462,9 +462,6 @@
     <section id="sinkolor-presentation" class="about">
         <div class="container">
             <div class="about-content">
-                <div class="about-image">
-                    <img src="images/sinkolor.jpeg" alt="S'inkolor - Artiste Tatoueur" class="about-photo">
-                </div>
                 <div class="about-text">
                     <h2>Sinkolor</h2>
                     <p>Passionné par l'art du tatouage et spécialisé dans les univers Manga, Disney et Pop culture, Sinkolor sera en capacité de répondre à toutes vos demandes!</p>
@@ -1204,57 +1201,6 @@
     
     <script type="module" src="script-firebase.js"></script>
     
-    <!-- Test direct pour vérifier l'initialisation -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🧪 TEST DIRECT - Page Sinkolor chargée');
-        console.log('🧪 Classe sinkolor-page:', !!document.querySelector('.sinkolor-page'));
-        console.log('🧪 Grille portfolioGrid:', !!document.getElementById('portfolioGrid'));
-        
-        // Test direct de l'initialisation
-        setTimeout(async () => {
-            console.log('🧪 Test d\'initialisation directe...');
-            try {
-                // Importer et initialiser Firebase directement
-                const module = await import('./firebase-config.js');
-                const firebaseService = module.firebaseService;
-                console.log('🧪 Firebase service importé:', !!firebaseService);
-                
-                // Lire les créations directement
-                const creations = await firebaseService.getSinkolorCreations();
-                console.log('🧪 Créations lues directement:', creations);
-                
-                // Rendre les créations directement
-                const grid = document.getElementById('portfolioGrid');
-                if (grid && creations) {
-                    grid.innerHTML = '';
-                    if (creations.length === 0) {
-                        grid.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Aucune création trouvée</div>';
-                    } else {
-                        creations.forEach(creation => {
-                            const item = document.createElement('div');
-                            item.className = 'portfolio-item';
-                            item.innerHTML = `
-                                <div class="portfolio-image">
-                                    <img src="${creation.imageData || 'https://placehold.co/600x600?text=Image'}" alt="${creation.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 20px;">
-                                </div>
-                                <div class="portfolio-overlay">
-                                    <h3>${creation.title}</h3>
-                                    <p>${creation.description}</p>
-                                    <a href="#contact" class="portfolio-link">Demander un devis</a>
-                                </div>
-                            `;
-                            grid.appendChild(item);
-                        });
-                    }
-                    console.log('🧪 Créations rendues directement');
-                }
-            } catch (error) {
-                console.error('🧪 Erreur lors du test direct:', error);
-            }
-        }, 2000);
-    });
-    </script>
 </body>
 </html>
 

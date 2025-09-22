@@ -513,46 +513,7 @@
     <!-- Script localStorage supprimé - utilisation de script-firebase.js -->
 
 
-        function loadData(){
-            const seed = [
-                { id: cryptoRandomId(), src: 'images/flash1.jpeg', caption: 'Flash 1' },
-                { id: cryptoRandomId(), src: 'images/flash2.jpeg', caption: 'Flash 2' },
-                { id: cryptoRandomId(), src: 'images/flash3.jpeg', caption: 'Flash 3' }
-            ];
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        if (parsed.length === 0) {
-                            // Seed defaults if empty, so users always see something sans "Éditer"
-                            localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-                            return seed;
-                        }
-                        return parsed;
-                    }
-                }
-            } catch(e) {}
-            // No valid data in storage: seed with defaults
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(seed)); } catch(e) {}
-            return seed;
-        }
 
-        function saveData(data){
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
-        }
-
-        function cryptoRandomId(){
-            if (window.crypto && crypto.getRandomValues) {
-                const buf = new Uint32Array(4);
-                crypto.getRandomValues(buf);
-                return Array.from(buf).map(x => x.toString(16).padStart(8,'0')).join('');
-            }
-            return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-        }
-
-        allFlashData = loadData();
-        filteredData = [...allFlashData];
 
         function filterData(searchTerm) {
             if (!searchTerm.trim()) {

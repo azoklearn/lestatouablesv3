@@ -661,20 +661,17 @@ async function readSinkolorCreations() {
         { 
             title: "Tatouage Manga #1", 
             description: "Création inspirée de l'univers manga",
-            category: "manga",
-            imageData: 'https://placehold.co/600x600?text=Manga+1' 
+            category: "manga"
         },
         { 
             title: "Tatouage Disney #2", 
             description: "Personnage Disney stylisé",
-            category: "disney",
-            imageData: 'https://placehold.co/600x600?text=Disney+2' 
+            category: "disney"
         },
         { 
             title: "Pop Culture #3", 
             description: "Référence culturelle moderne",
-            category: "pop",
-            imageData: 'https://placehold.co/600x600?text=Pop+Culture+3' 
+            category: "pop"
         }
     ];
     

@@ -652,80 +652,57 @@ async function initFlash() {
 }
 
 // ============================
-// Sinkolor Creations (Firebase) — lecture + affichage
+// Sinkolor Creations (Firebase) — EXACTEMENT comme les tarifs LDermo
 // ============================
+let sinkolorCreations = [];
+let sinkolorEditMode = false;
+
 async function readSinkolorCreations() {
-    console.log('📚 Début readSinkolorCreations...');
-    
-    const defaultCreations = [
-        { 
-            title: "Tatouage Manga #1", 
-            description: "Création inspirée de l'univers manga",
-            category: "manga"
-        },
-        { 
-            title: "Tatouage Disney #2", 
-            description: "Personnage Disney stylisé",
-            category: "disney"
-        },
-        { 
-            title: "Pop Culture #3", 
-            description: "Référence culturelle moderne",
-            category: "pop"
-        }
-    ];
-    
     try {
-        console.log('🔥 Lecture depuis Firebase...');
         const firebaseCreations = await firebaseService.getSinkolorCreations();
-        console.log('🔥 Créations Firebase:', firebaseCreations);
-        
         if (firebaseCreations.length > 0) {
-            console.log('✅ Créations trouvées dans Firebase, retour des données');
+            sinkolorCreations = firebaseCreations;
             return firebaseCreations;
         } else {
-            console.log('📝 Aucune création dans Firebase, ajout des créations par défaut...');
-            // Si pas de créations dans Firebase, ajouter les créations par défaut
+            // Ajouter les créations par défaut
+            const defaultCreations = [
+                { 
+                    title: "Tatouage Manga #1", 
+                    description: "Création inspirée de l'univers manga",
+                    category: "manga"
+                },
+                { 
+                    title: "Tatouage Disney #2", 
+                    description: "Personnage Disney stylisé",
+                    category: "disney"
+                },
+                { 
+                    title: "Pop Culture #3", 
+                    description: "Référence culturelle moderne",
+                    category: "pop"
+                }
+            ];
+            
             for (const creation of defaultCreations) {
                 await firebaseService.addSinkolorCreation(creation);
             }
-            console.log('✅ Créations par défaut ajoutées');
+            sinkolorCreations = defaultCreations;
             return defaultCreations;
         }
     } catch (error) {
-        console.error('❌ Erreur Firebase:', error);
-        // Pas de fallback localStorage - uniquement Firebase
-        console.log('⚠️ Retour d\'un tableau vide');
+        console.error('Erreur Firebase:', error);
         return [];
     }
 }
 
 // Fonction localStorage supprimée - uniquement Firebase
 
-async function renderSinkolorCreations(creations) {
-    console.log('🎨 Début renderSinkolorCreations...');
-    console.log('📊 Créations reçues:', creations);
-    
+function renderSinkolorCreations() {
     const grid = document.getElementById('portfolioGrid');
-    console.log('🔍 Grille trouvée:', !!grid);
-    if (!grid) {
-        console.error('❌ Grille portfolioGrid non trouvée!');
-        return;
-    }
+    if (!grid) return;
     
-    // Ne pas vider la grille si elle n'est pas celle de Sinkolor
-    const isSinkolorPage = document.querySelector('.sinkolor-page');
-    console.log('🔍 Page Sinkolor détectée:', !!isSinkolorPage);
-    if (!isSinkolorPage) {
-        console.log('⚠️ Pas sur la page Sinkolor, arrêt du rendu');
-        return;
-    }
-    
-    console.log('🧹 Vidage de la grille...');
     grid.innerHTML = '';
-    
-    if (!creations || creations.length === 0) {
-        console.log('📭 Aucune création, affichage du message vide');
+    if (sinkolorCreations.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'portfolio-item';
         empty.style.textAlign = 'center';
@@ -743,28 +720,20 @@ async function renderSinkolorCreations(creations) {
         return;
     }
     
-    console.log('🎨 Rendu de', creations.length, 'créations...');
-    
-    creations.forEach((creation, index) => {
-        console.log(`🎨 Création ${index + 1}:`, creation);
-        
-        const item = document.createElement('div');
-        item.className = 'portfolio-item';
-        item.setAttribute('data-category', creation.category || 'all');
-        item.setAttribute('data-creation-id', creation.id || '');
+    sinkolorCreations.forEach((creation, index) => {
+        const div = document.createElement('div');
+        div.className = 'portfolio-item';
         
         const imageDiv = document.createElement('div');
         imageDiv.className = 'portfolio-image';
         
         if (creation.imageData) {
-            console.log(`🖼️ Image trouvée pour création ${index + 1}:`, creation.imageData);
             const img = document.createElement('img');
             img.src = creation.imageData;
             img.alt = creation.title || 'Création Sinkolor';
             img.loading = 'lazy';
             imageDiv.appendChild(img);
         } else {
-            console.log(`🎨 Pas d'image pour création ${index + 1}, icône par défaut`);
             const icon = document.createElement('i');
             icon.className = 'fas fa-palette';
             icon.style.fontSize = '3rem';
@@ -780,111 +749,72 @@ async function renderSinkolorCreations(creations) {
             <a href="#contact" class="portfolio-link">Demander un devis</a>
         `;
         
-        item.appendChild(imageDiv);
-        item.appendChild(overlay);
-        grid.appendChild(item);
+        div.appendChild(imageDiv);
+        div.appendChild(overlay);
         
-        console.log(`✅ Création ${index + 1} ajoutée à la grille`);
+        if (sinkolorEditMode) {
+            const controls = document.createElement('div');
+            controls.style.cssText = 'position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10;';
+            
+            const editButton = document.createElement('button');
+            editButton.className = 'btn btn-secondary';
+            editButton.type = 'button';
+            editButton.textContent = 'Modifier';
+            editButton.style.fontSize = '0.7rem';
+            editButton.style.padding = '4px 8px';
+            editButton.addEventListener('click', () => editSinkolorCreation(creation.id || index));
+            
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'btn btn-secondary';
+            deleteButton.type = 'button';
+            deleteButton.textContent = 'Supprimer';
+            deleteButton.style.fontSize = '0.7rem';
+            deleteButton.style.padding = '4px 8px';
+            deleteButton.addEventListener('click', () => deleteSinkolorCreation(creation.id || index));
+            
+            controls.appendChild(editButton);
+            controls.appendChild(deleteButton);
+            div.style.position = 'relative';
+            div.appendChild(controls);
+        }
+        
+        grid.appendChild(div);
     });
-    
-    console.log('🎨 Rendu terminé,', grid.children.length, 'éléments dans la grille');
 }
 
 // Système d'authentification pour Sinkolor - SUPPRIMÉ
 // Plus de mot de passe requis pour gérer les créations
 
 async function initSinkolorCreations() {
-    console.log('🎨 Début initSinkolorCreations...');
-    
-    // Initialiser Firebase
-    console.log('🔥 Initialisation Firebase...');
     await initFirebase();
-    console.log('✅ Firebase initialisé');
+    await readSinkolorCreations();
+    renderSinkolorCreations();
     
-    // Charger les créations (avec seed automatique si nécessaire)
-    console.log('📚 Lecture des créations...');
-    const creations = await readSinkolorCreations();
-    console.log('📚 Créations lues:', creations);
+    const toggleBtn = document.getElementById('toggleEditPortfolio');
+    const addBtn = document.getElementById('addCreation');
     
-    console.log('🎨 Rendu des créations...');
-    await renderSinkolorCreations(creations);
-    console.log('✅ Créations rendues');
-    
-    // Écouter les changements en temps réel si Firebase est disponible
-    if (firebaseService) {
-        console.log('👂 Écoute des changements Firebase...');
-        firebaseService.onSinkolorCreationsChange((snapshot) => {
-            const newCreations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderSinkolorCreations(newCreations);
-        });
-    } else {
-        console.log('⚠️ Firebase service non disponible');
-    }
-    
-    // Gestion des boutons d'administration
-    const toggleEditBtn = document.getElementById('toggleEditPortfolio');
-    const addCreationBtn = document.getElementById('addCreation');
-    
-    if (toggleEditBtn) {
-        let editMode = false;
-        
-        toggleEditBtn.addEventListener('click', () => {
-            editMode = !editMode;
-            toggleEditBtn.innerHTML = editMode ? 
-                '<i class="fas fa-times" style="margin-right: 8px;"></i>Terminer' : 
-                '<i class="fas fa-edit" style="margin-right: 8px;"></i>Gérer les créations';
-            
-            // Afficher/masquer le bouton d'ajout
-            if (addCreationBtn) {
-                addCreationBtn.style.display = editMode ? 'block' : 'none';
-            }
-            
-            // Ajouter/supprimer les boutons d'édition sur chaque création
-            const portfolioItems = document.querySelectorAll('#portfolioGrid .portfolio-item');
-            portfolioItems.forEach(item => {
-                let editControls = item.querySelector('.edit-controls');
-                if (editMode && !editControls) {
-                    editControls = document.createElement('div');
-                    editControls.className = 'edit-controls';
-                    editControls.style.cssText = 'position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10;';
-                    
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'btn btn-secondary';
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                    editBtn.style.cssText = 'padding: 5px 8px; font-size: 0.8rem;';
-                    editBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const creationId = item.getAttribute('data-creation-id');
-                        if (creationId) editCreation(creationId);
-                    });
-                    
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn btn-secondary';
-                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    deleteBtn.style.cssText = 'padding: 5px 8px; font-size: 0.8rem; background: #e74c3c;';
-                    deleteBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const creationId = item.getAttribute('data-creation-id');
-                        if (creationId) deleteCreation(creationId);
-                    });
-                    
-                    editControls.appendChild(editBtn);
-                    editControls.appendChild(deleteBtn);
-                    item.style.position = 'relative';
-                    item.appendChild(editControls);
-                } else if (!editMode && editControls) {
-                    editControls.remove();
-                }
-            });
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sinkolorEditMode = !sinkolorEditMode;
+            setSinkolorEditMode(sinkolorEditMode);
         });
     }
     
-    // Gestion du bouton d'ajout
-    if (addCreationBtn) {
-        addCreationBtn.addEventListener('click', () => {
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
             showAddSinkolorCreationModal();
         });
     }
+}
+
+function setSinkolorEditMode(on) {
+    sinkolorEditMode = !!on;
+    const addBtn = document.getElementById('addCreation');
+    const toggleBtn = document.getElementById('toggleEditPortfolio');
+    
+    if (addBtn) addBtn.style.display = on ? '' : 'none';
+    if (toggleBtn) toggleBtn.textContent = on ? 'Terminer' : 'Gérer les créations';
+    renderSinkolorCreations();
 }
 
 // Fonction pour afficher le modal d'ajout de création Sinkolor
@@ -1132,18 +1062,121 @@ function showAddSinkolorCreationModal() {
     });
 }
 
-// Fonction pour éditer une création
-async function editCreation(creationId) {
-    // Implémentation de l'édition (similaire à l'ajout)
-    console.log('Édition de la création:', creationId);
+async function editSinkolorCreation(id) {
+    const creation = sinkolorCreations.find(c => c.id === id || sinkolorCreations.indexOf(c) === id);
+    if (!creation) return;
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 15px; max-width: 500px; width: 90%;">
+            <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">Modifier la création</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Titre :</label>
+                <input type="text" id="editCreationTitle" value="${creation.title || ''}" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Description :</label>
+                <textarea id="editCreationDescription" rows="3" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    resize: vertical;
+                ">${creation.description || ''}</textarea>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Catégorie :</label>
+                <select id="editCreationCategory" style="
+                    width: 100%;
+                    padding: 0.8rem;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                ">
+                    <option value="manga" ${creation.category === 'manga' ? 'selected' : ''}>Manga</option>
+                    <option value="disney" ${creation.category === 'disney' ? 'selected' : ''}>Disney</option>
+                    <option value="pop" ${creation.category === 'pop' ? 'selected' : ''}>Pop Culture</option>
+                    <option value="anime" ${creation.category === 'anime' ? 'selected' : ''}>Anime</option>
+                    <option value="other" ${creation.category === 'other' ? 'selected' : ''}>Autre</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancelEditCreation" class="btn btn-secondary" type="button">Annuler</button>
+                <button id="saveEditCreation" class="btn btn-primary" type="button">Sauvegarder</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('saveEditCreation').addEventListener('click', async () => {
+        const title = document.getElementById('editCreationTitle').value.trim();
+        const description = document.getElementById('editCreationDescription').value.trim();
+        const category = document.getElementById('editCreationCategory').value;
+        
+        if (!title || !description) {
+            alert('Veuillez remplir tous les champs');
+            return;
+        }
+        
+        try {
+            const updatedCreation = { ...creation, title, description, category };
+            await firebaseService.updateSinkolorCreation(creation.id, updatedCreation);
+            
+            // Mettre à jour la liste locale
+            const index = sinkolorCreations.findIndex(c => c.id === creation.id);
+            if (index !== -1) {
+                sinkolorCreations[index] = updatedCreation;
+            }
+            
+            document.body.removeChild(modal);
+            renderSinkolorCreations();
+            showNotification('Création modifiée avec succès !', 'success');
+        } catch (error) {
+            console.error('Erreur lors de la modification:', error);
+            alert('Erreur lors de la modification: ' + error.message);
+        }
+    });
+    
+    document.getElementById('cancelEditCreation').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
 }
 
-// Fonction pour supprimer une création
-async function deleteCreation(creationId) {
-    if (!confirm('Supprimer cette création ? L\'image sera également supprimée.')) return;
+async function deleteSinkolorCreation(id) {
+    if (!confirm('Supprimer cette création ?')) return;
     
     try {
-        await firebaseService.deleteSinkolorCreationWithImage(creationId);
+        await firebaseService.deleteSinkolorCreation(id);
+        
+        // Supprimer de la liste locale
+        sinkolorCreations = sinkolorCreations.filter(c => c.id !== id);
+        
+        renderSinkolorCreations();
         showNotification('Création supprimée avec succès !', 'success');
     } catch (error) {
         console.error('Erreur lors de la suppression:', error);

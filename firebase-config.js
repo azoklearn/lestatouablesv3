@@ -353,5 +353,32 @@ export const firebaseService = {
                 console.error('Erreur lors de la récupération de la création:', error);
                 return null;
             }
+        },
+
+        // Fonction pour mettre à jour une création Sinkolor
+        async updateSinkolorCreation(creationId, creationData) {
+            try {
+                const docRef = doc(db, 'sinkolorCreations', creationId);
+                await updateDoc(docRef, {
+                    ...creationData,
+                    updatedAt: new Date().toISOString()
+                });
+                return creationId;
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour de la création:', error);
+                throw error;
+            }
+        },
+
+        // Fonction pour supprimer une création Sinkolor
+        async deleteSinkolorCreation(creationId) {
+            try {
+                const docRef = doc(db, 'sinkolorCreations', creationId);
+                await deleteDoc(docRef);
+                return creationId;
+            } catch (error) {
+                console.error('Erreur lors de la suppression de la création:', error);
+                throw error;
+            }
         }
 };

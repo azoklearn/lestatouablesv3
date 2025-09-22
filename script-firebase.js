@@ -752,19 +752,12 @@ async function initFlash() {
             const imageDiv = document.createElement('div');
             imageDiv.className = 'portfolio-image';
             
-            if (creation.imageData) {
-                const img = document.createElement('img');
-                img.src = creation.imageData;
-                img.alt = creation.title || 'Création Sinkolor';
-                img.loading = 'lazy';
-                imageDiv.appendChild(img);
-            } else {
-                const icon = document.createElement('i');
-                icon.className = 'fas fa-palette';
-                icon.style.fontSize = '3rem';
-                icon.style.color = '#666';
-                imageDiv.appendChild(icon);
-            }
+            // Toujours afficher l'icône par défaut (pas d'images)
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-palette';
+            icon.style.fontSize = '3rem';
+            icon.style.color = '#666';
+            imageDiv.appendChild(icon);
             
             const overlay = document.createElement('div');
             overlay.className = 'portfolio-overlay';
@@ -1275,46 +1268,6 @@ function showAddSinkolorCreationModal() {
                 </select>
             </div>
             
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Image de la création :</label>
-                <input type="file" id="creationImageFile" accept="image/*" style="
-                    width: 100%;
-                    padding: 0.8rem;
-                    border: 2px solid #ddd;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    background: white;
-                ">
-                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
-                    Formats acceptés : JPG, PNG, GIF, WebP (max 10MB)
-                </small>
-                <div id="imagePreview" style="
-                    margin-top: 1rem;
-                    text-align: center;
-                    display: none;
-                ">
-                    <img id="previewImg" style="
-                        max-width: 200px;
-                        max-height: 200px;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                    ">
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Ou URL de l'image :</label>
-                <input type="url" id="creationImageUrl" placeholder="https://exemple.com/image.jpg" style="
-                    width: 100%;
-                    padding: 0.8rem;
-                    border: 2px solid #ddd;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                ">
-                <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
-                    Alternative : utilisez une URL d'image existante
-                </small>
-            </div>
             
             <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button id="cancelCreationBtn" style="

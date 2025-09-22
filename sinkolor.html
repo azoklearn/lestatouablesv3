@@ -637,14 +637,14 @@
         
         async function loadCreations(){
             const defaultCreations = [
-                { src: 'images/image9.jpeg', alt: 'Tatouage S\'inkolor 9', title: 'Tatouage S\'inkolor 9', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image10.jpeg', alt: 'Tatouage S\'inkolor 10', title: 'Tatouage S\'inkolor 10', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image12.jpeg', alt: 'Tatouage S\'inkolor 12', title: 'Tatouage S\'inkolor 12', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image13.jpeg', alt: 'Tatouage S\'inkolor 13', title: 'Tatouage S\'inkolor 13', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image14.jpeg', alt: 'Tatouage S\'inkolor 14', title: 'Tatouage S\'inkolor 14', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image15.jpeg', alt: 'Tatouage S\'inkolor 15', title: 'Tatouage S\'inkolor 15', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image16.jpeg', alt: 'Tatouage S\'inkolor 16', title: 'Tatouage S\'inkolor 16', category: 'tatouage', tags: 'art, créatif' },
-                { src: 'images/image17.jpeg', alt: 'Tatouage S\'inkolor 17', title: 'Tatouage S\'inkolor 17', category: 'tatouage', tags: 'art, créatif' }
+                { title: 'Tatouage S\'inkolor 9', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 10', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 12', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 13', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 14', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 15', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 16', description: 'Création artistique personnalisée', category: 'manga' },
+                { title: 'Tatouage S\'inkolor 17', description: 'Création artistique personnalisée', category: 'manga' }
             ];
             
             try {
@@ -702,20 +702,29 @@
                 portfolioImage.className = 'portfolio-image';
                 portfolioImage.style.marginBottom = '0';
                 
-                const img = document.createElement('img');
-                img.src = creation.src;
-                img.alt = creation.alt;
-                img.loading = 'lazy';
-                img.style.cursor = 'pointer';
-                
-                // Ajouter l'event listener pour la lightbox
-                img.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openLightbox(creation.src, creation.alt);
-                });
-                
-                portfolioImage.appendChild(img);
+                // Afficher l'image si elle existe, sinon icône par défaut
+                if (creation.imageData) {
+                    const img = document.createElement('img');
+                    img.src = creation.imageData;
+                    img.alt = creation.title || 'Création Sinkolor';
+                    img.loading = 'lazy';
+                    img.style.cursor = 'pointer';
+                    
+                    // Ajouter l'event listener pour la lightbox
+                    img.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openLightbox(creation.imageData, creation.title);
+                    });
+                    
+                    portfolioImage.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-palette';
+                    icon.style.fontSize = '3rem';
+                    icon.style.color = '#666';
+                    portfolioImage.appendChild(icon);
+                }
                 
                 // Ajouter l'overlay avec le lien Instagram
                 const portfolioOverlay = document.createElement('div');
@@ -781,25 +790,186 @@
             const creation = creations.find(c => c.id === id || creations.indexOf(c) === id);
             if (!creation) return;
             
-            const newSrc = prompt('Nouvelle URL de l\'image :', creation.src) || creation.src;
-            const newAlt = prompt('Nouvelle description :', creation.alt) || creation.alt;
+            // Créer un modal d'édition avec drag & drop
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
             
-            const updatedCreation = { ...creation, src: newSrc, alt: newAlt };
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 15px;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                ">
+                    <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">Modifier la création</h3>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Titre :</label>
+                        <input type="text" id="editTitle" value="${creation.title || ''}" style="
+                            width: 100%;
+                            padding: 0.8rem;
+                            border: 2px solid #ddd;
+                            border-radius: 8px;
+                            font-size: 1rem;
+                        ">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Description :</label>
+                        <textarea id="editDescription" rows="3" style="
+                            width: 100%;
+                            padding: 0.8rem;
+                            border: 2px solid #ddd;
+                            border-radius: 8px;
+                            font-size: 1rem;
+                            resize: vertical;
+                        ">${creation.description || ''}</textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Image :</label>
+                        <div id="dropZone" style="
+                            border: 2px dashed #ddd;
+                            border-radius: 8px;
+                            padding: 2rem;
+                            text-align: center;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #666; margin-bottom: 1rem;"></i>
+                            <p style="margin: 0; color: #666;">Glissez-déposez une image ici ou cliquez pour sélectionner</p>
+                            <input type="file" id="imageFile" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="imagePreview" style="margin-top: 1rem; text-align: center; display: none;">
+                            <img id="previewImg" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button id="cancelEdit" style="
+                            padding: 0.8rem 1.5rem;
+                            border: 2px solid #ddd;
+                            background: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">Annuler</button>
+                        <button id="saveEdit" style="
+                            padding: 0.8rem 1.5rem;
+                            background: linear-gradient(135deg, #2c3e50, #34495e);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">Sauvegarder</button>
+                    </div>
+                </div>
+            `;
             
-            try {
-                if (creation.id) {
-                    await firebaseService.updateSinkolorCreation(creation.id, updatedCreation);
-                } else {
-                    // Fallback localStorage
-                    const index = creations.indexOf(creation);
-                    creations[index] = updatedCreation;
-                    localStorage.setItem('sinkolorCreations.v1', JSON.stringify(creations));
+            document.body.appendChild(modal);
+            
+            // Gestion du drag & drop
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('imageFile');
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            let selectedFile = null;
+            
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#007bff';
+                dropZone.style.backgroundColor = '#f8f9fa';
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = '#ddd';
+                dropZone.style.backgroundColor = 'white';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#ddd';
+                dropZone.style.backgroundColor = 'white';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
                 }
-                await loadAndRenderCreations();
-            } catch (error) {
-                console.error('Erreur lors de la mise à jour:', error);
-                alert('Erreur lors de la mise à jour');
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+            
+            function handleFile(file) {
+                if (file.type.startsWith('image/')) {
+                    selectedFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewImg.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Veuillez sélectionner un fichier image');
+                }
             }
+            
+            // Gestion des boutons
+            document.getElementById('saveEdit').addEventListener('click', async () => {
+                const title = document.getElementById('editTitle').value.trim();
+                const description = document.getElementById('editDescription').value.trim();
+                
+                if (!title) {
+                    alert('Veuillez entrer un titre');
+                    return;
+                }
+                
+                try {
+                    let imageData = creation.imageData;
+                    
+                    // Upload de l'image si un fichier est sélectionné
+                    if (selectedFile) {
+                        const uploadResult = await firebaseService.uploadImage(selectedFile, 'sinkolor-creations');
+                        imageData = uploadResult.url;
+                    }
+                    
+                    const updatedCreation = { ...creation, title, description, imageData };
+                    
+                    if (creation.id) {
+                        await firebaseService.updateSinkolorCreation(creation.id, updatedCreation);
+                    } else {
+                        const index = creations.indexOf(creation);
+                        creations[index] = updatedCreation;
+                        localStorage.setItem('sinkolorCreations.v1', JSON.stringify(creations));
+                    }
+                    
+                    await loadAndRenderCreations();
+                    document.body.removeChild(modal);
+                } catch (error) {
+                    console.error('Erreur lors de la mise à jour:', error);
+                    alert('Erreur lors de la mise à jour');
+                }
+            });
+            
+            document.getElementById('cancelEdit').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
         }
         
         async function deleteCreation(id){
